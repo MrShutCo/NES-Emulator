@@ -53,7 +53,7 @@ func Execute() {
 	end := fmt.Sprintf("A:%02X X:%02X Y %02X P:%02X SP:%02X", AC, X, Y, SR, SP)
 
 	if FuncMap[instruct] == nil {
-		printStack()
+		//printStack()
 		fmt.Printf("PC: %04X\n", PC)
 		fmt.Printf("Found not implemented instruction: 0x%02X\n", instruct)
 	}
@@ -116,6 +116,7 @@ func LoadMaps() {
 	Flag()
 	Branch()
 	Other()
+	Bitwise()
 }
 
 func SetRam(start uint16, data ...byte) {

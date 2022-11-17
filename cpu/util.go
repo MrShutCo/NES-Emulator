@@ -1,5 +1,7 @@
 package cpu
 
+import "fmt"
+
 func bytesToInt16(high, low byte) uint16 {
 	return uint16(high)<<8 | uint16(low)
 }
@@ -97,4 +99,58 @@ func setCarryFlag(enable bool) {
 	} else {
 		SR = SR & 0b1111_1110
 	}
+}
+
+// Addressing modes
+
+func apply(function func(func() byte), addressingModes map[byte]func() byte) {
+	for b, f := range addressingModes {
+		FuncMap[b] = func() {
+			function(f)
+		}
+	}
+}
+
+func immed() byte {
+	val := RAM[PC+1]
+	output = fmt.Sprintf("#$%02X", RAM[PC+1])
+	PC += 2
+	return val
+}
+
+func zeropage() byte {
+	val := RAM[RAM[PC+1]]
+	output = fmt.Sprintf("$%02X = ", val)
+	PC += 2
+	return val
+}
+
+func zeropageX() byte {
+	val := RAM[RAM[PC+1]+X]
+	PC += 2
+	return val
+}
+
+func zeropageY() byte {
+	val := RAM[RAM[PC+1]+Y]
+	PC += 2
+	return val
+}
+
+func absolute() byte {
+	val := RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])]
+	PC += 3
+	return val
+}
+
+func absoluteX() byte {
+	val := RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])+uint16(X)]
+	PC += 3
+	return val
+}
+
+func absoluteY() byte {
+	val := RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])+uint16(Y)]
+	PC += 3
+	return val
 }

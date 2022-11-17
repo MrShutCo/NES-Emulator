@@ -26,10 +26,11 @@ func JMP() {
 	}
 	// RTS
 	FuncMap[0x60] = func() {
-		printStack()
+		//printStack()
 		l := pull()
 		h := pull()
 		PC = bytesToInt16(h, l)
+		PC += 3
 	}
 }
 
