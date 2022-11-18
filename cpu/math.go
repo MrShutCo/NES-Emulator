@@ -49,4 +49,33 @@ func Math() {
 			setNegativeFlag(true)
 		}
 	}
+
+	newInst(0x69, "ADC", "immediate", 2)
+	newInst(0x65, "ADC", "zeropage", 3)
+	newInst(0x75, "ADC", "zeropage,X", 4)
+	newInst(0x6D, "ADC", "absolute", 4)
+	newInst(0x7D, "ADC", "absolute,X", 4)
+	newInst(0x79, "ADC", "absolute,Y", 4)
+	ad := []foo{
+		{0x69, func() { adc(immed) }},
+		{0x65, func() { adc(zeropage) }},
+		{0x75, func() { adc(zeropageX) }},
+		{0x6D, func() { adc(absolute) }},
+		{0x7D, func() { adc(absoluteX) }},
+		{0x79, func() { adc(absoluteY) }},
+	}
+	apply(ad)
+}
+
+func adc(f func() byte) {
+	p := f()
+	val := uint16(AC + p)
+	if isCarrySet() {
+		val++
+		//p++
+	}
+
+	setCarryFlag(val > 0xFF)
+	setOverflowFlag(((AC^p)&0x80 == 0) && ((AC^byte(val))&0x80 != 0))
+	SetAC(byte(val))
 }

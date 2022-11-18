@@ -1,6 +1,10 @@
 package cpu
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+	"runtime"
+)
 
 func bytesToInt16(high, low byte) uint16 {
 	return uint16(high)<<8 | uint16(low)
@@ -40,6 +44,7 @@ func isZeroSet() bool      { return getBit(SR, 1) }
 func isInterruptSet() bool { return getBit(SR, 2) }
 func isDecimalSet() bool   { return getBit(SR, 3) }
 func isBreakSet() bool     { return getBit(SR, 4) }
+func isBit5Set() bool      { return getBit(SR, 5) }
 func isOverflowSet() bool  { return getBit(SR, 6) }
 func isNegativeSet() bool  { return getBit(SR, 7) }
 
@@ -58,6 +63,14 @@ func setOverflowFlag(enable bool) {
 		SR = SR | 0b0100_0000
 	} else {
 		SR = SR & 0b1011_1111
+	}
+}
+
+func setEmptyFlag(enable bool) {
+	if enable {
+		SR = SR | 0b0010_0000
+	} else {
+		SR = SR & 0b1101_1111
 	}
 }
 
@@ -101,14 +114,15 @@ func setCarryFlag(enable bool) {
 	}
 }
 
-// Addressing modes
-
-func apply(function func(func() byte), addressingModes map[byte]func() byte) {
-	for b, f := range addressingModes {
-		FuncMap[b] = func() {
-			function(f)
-		}
+// Addressing mode
+func apply(functions []foo) {
+	for i := range functions {
+		FuncMap[functions[i].opcode] = functions[i].f
 	}
+}
+
+func GetFunctionName(i interface{}) string {
+	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }
 
 func immed() byte {
@@ -138,19 +152,25 @@ func zeropageY() byte {
 }
 
 func absolute() byte {
-	val := RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])]
+	addr := bytesToInt16(RAM[PC+2], RAM[PC+1])
+	val := RAM[addr]
 	PC += 3
+	output = fmt.Sprintf("$%04X", addr)
 	return val
 }
 
 func absoluteX() byte {
-	val := RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])+uint16(X)]
+	addr := bytesToInt16(RAM[PC+2], RAM[PC+1]) + uint16(X)
+	val := RAM[addr]
 	PC += 3
+	output = fmt.Sprintf("$%04X", addr)
 	return val
 }
 
 func absoluteY() byte {
-	val := RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])+uint16(Y)]
+	addr := bytesToInt16(RAM[PC+2], RAM[PC+1]) + uint16(Y)
+	val := RAM[addr]
 	PC += 3
+	output = fmt.Sprintf("$%04X", addr)
 	return val
 }

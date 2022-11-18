@@ -14,21 +14,23 @@ func Stack() {
 	}
 	// PHP
 	FuncMap[0x08] = func() {
-		push(SR)
-		//SR = SR //| 0b0000_0000 // TODO: is this right?
+		push(SR | 0b0011_0000)
 		PC++
 	}
 	// PLA
 	FuncMap[0x68] = func() {
-		AC = pull()
+		SetAC(pull())
 		PC++
 	}
 	// PLP
 	// TODO: determine what break flag does???
 	FuncMap[0x28] = func() {
 		// Ignore bit 5
-		SR = RAM[STACK+uint16(SP)] //| (SR & 0b_0001_0000)
-		SP++
+		oldSR := SR
+		tempSR := pull()
+		SR = tempSR
+		setBreakFlag(getBit(oldSR, 4))
+		setEmptyFlag(getBit(oldSR, 5))
 		PC++
 	}
 }

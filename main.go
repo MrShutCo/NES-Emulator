@@ -8,6 +8,10 @@ import (
 )
 
 func main() {
+	DoProgram()
+}
+
+func DoProgram() {
 	//Load("test.nes")
 	cpu.Reset()
 	cpu.LoadMaps()
@@ -17,9 +21,7 @@ func main() {
 	cpu.Start()
 	cpu.PC = 0xC000
 
-	f, _ := os.Create("output.txt")
-	defer f.Close()
-
+	os.Truncate("access.log", 0)
 	f, err := os.OpenFile("access.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -27,13 +29,13 @@ func main() {
 	defer f.Close()
 
 	for {
-		cpu.Execute()
-		fmt.Fscanln(os.Stdin)
+		output := cpu.Execute()
+		//fmt.Fscanln(os.Stdin)
 		//start := fmt.Sprintf("%04X %02X %02X %02x  ", cpu.PC, cpu.RAM[cpu.PC], cpu.RAM[cpu.PC+1], cpu.RAM[cpu.PC+2])
 		//middle := fmt.Sprintf("%s", cpu.Instructions[cpu.RAM[cpu.PC]])
 		//end := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X", cpu.AC, cpu.X, cpu.Y, cpu.SP)
 		//s := ""
-		//f.Write([]byte(start + middle + "\n"))
+		f.Write([]byte(output + "\n"))
 		//fmt.Println(cpu.RAM[0x2000:0x2100])
 	}
 }

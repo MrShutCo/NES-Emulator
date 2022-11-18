@@ -30,13 +30,13 @@ func STX() {
 	newInst(0x96, "STX", "zeropage,Y", 3)
 	newInst(0x8E, "STX", "absolute", 3)
 
-	x := map[byte]func() byte{
+	/*x := map[byte]func() byte{
 		0x86: zeropage,
 		0x96: zeropageY,
 		0x8E: absolute,
 	}
 	apply(stx, x)
-
+	*/
 	// STX zeropage
 	FuncMap[0x86] = func() {
 		RAM[RAM[PC+1]] = X

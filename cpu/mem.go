@@ -40,17 +40,20 @@ func newInst(opcode byte, name, mode string, cycles uint8) {
 	Instructions[opcode] = Instruction{Name: name, AddressingMode: mode, Cycles: cycles}
 }
 
-func Execute() {
+func Execute() string {
 	instruct := RAM[PC]
 
 	//output := fmt.Sprintf("%04X %02X %02X %02X", PC, instruct)
 
-	start := fmt.Sprintf("%04X %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
+	start := fmt.Sprintf("%04X  %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
 	middle := Instructions[RAM[PC]].String()
 
 	//fmt.Printf("Executing 0x%x: %s\tat 0x%x\n", instruct, Instructions[instruct].String(), PC)
 
-	end := fmt.Sprintf("A:%02X X:%02X Y %02X P:%02X SP:%02X", AC, X, Y, SR, SP)
+	end := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
+
+	//if instruct == 0x29 {
+	//}
 
 	if FuncMap[instruct] == nil {
 		//printStack()
@@ -61,8 +64,8 @@ func Execute() {
 	FuncMap[instruct]()
 
 	a := start + middle + " " + output
-	fmt.Printf("%-40v %29v", a, end)
 	output = ""
+	return fmt.Sprintf("%-43v %29v", a, end)
 }
 
 func Start() {
@@ -117,6 +120,8 @@ func LoadMaps() {
 	Branch()
 	Other()
 	Bitwise()
+	Math()
+	Compare()
 }
 
 func SetRam(start uint16, data ...byte) {
