@@ -2,42 +2,40 @@ package cpu
 
 func Compare() {
 	newInst(0xC9, "CMP", "immediate", 2)
-	cmpac := []foo{
+	newInst(0xC5, "CMP", "zeropage", 3)
+	newInst(0xD5, "CMP", "zeropage,X", 4)
+	newInst(0xCD, "CMP", "absolute", 4)
+	newInst(0xDD, "CMP", "absolute,X", 4)
+	newInst(0xD9, "CMP", "absolute,Y", 4)
+	cmca := []foo{
 		{0xC9, func() { cmp(AC, immed()) }},
+		{0xC5, func() { cmp(AC, zeropage()) }},
+		{0xD5, func() { cmp(AC, zeropageX()) }},
+		{0xCD, func() { cmp(AC, absolute()) }},
+		{0xDD, func() { cmp(AC, absoluteX()) }},
+		{0xD9, func() { cmp(AC, absoluteY()) }},
 	}
-	apply(cmpac)
+	apply(cmca)
 
-	// CPX immeadiate
-	FuncMap[0xE0] = func() {
-		cmp(X, RAM[PC+1])
-		PC += 2
+	newInst(0xE0, "CPX", "immediate", 2)
+	newInst(0xE4, "CPX", "zeropage", 3)
+	newInst(0xEC, "CPX", "absolute", 4)
+	cmx := []foo{
+		{0xE0, func() { cmp(X, immed()) }},
+		{0xE4, func() { cmp(X, zeropage()) }},
+		{0xEC, func() { cmp(X, absolute()) }},
 	}
-	// CPX zeropage
-	FuncMap[0xE4] = func() {
-		cmp(X, RAM[RAM[PC+1]])
-		PC += 2
-	}
-	// CPX absolute
-	FuncMap[0xEC] = func() {
-		cmp(X, RAM[getNextWord()])
-		PC += 3
-	}
+	apply(cmx)
 
-	// CPY immeadiate
-	FuncMap[0xC0] = func() {
-		cmp(Y, RAM[PC+1])
-		PC += 2
+	newInst(0xC0, "CPY", "immediate", 2)
+	newInst(0xC4, "CPY", "zeropage", 3)
+	newInst(0xCC, "CPY", "absolute", 4)
+	cmy := []foo{
+		{0xC0, func() { cmp(Y, immed()) }},
+		{0xC4, func() { cmp(Y, zeropage()) }},
+		{0xCC, func() { cmp(Y, absolute()) }},
 	}
-	// CPY zeropage
-	FuncMap[0xC4] = func() {
-		cmp(Y, RAM[RAM[PC+1]])
-		PC += 2
-	}
-	// CPY absolute
-	FuncMap[0xCC] = func() {
-		cmp(Y, RAM[getNextWord()])
-		PC += 3
-	}
+	apply(cmy)
 }
 
 func cmp(value byte, memory byte) {

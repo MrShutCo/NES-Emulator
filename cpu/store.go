@@ -3,26 +3,36 @@ package cpu
 import "fmt"
 
 func STA() {
-	newInst(0x85, "STA", "zeropage", 2)
-	newInst(0x95, "STA", "zeropage,Y", 3)
-	newInst(0x8D, "STA", "absolute", 3)
-
-	// STA zeropage
-	FuncMap[0x85] = func() {
-		RAM[RAM[PC+1]] = AC
-		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], AC)
-		PC += 2
+	newInst(0x85, "STA", "zeropage", 3)
+	newInst(0x95, "STA", "zeropage,X", 4)
+	newInst(0x8D, "STA", "absolute", 4)
+	newInst(0x9D, "STA", "absolute,X", 5)
+	newInst(0x99, "STA", "absolute,Y", 5)
+	a := []foo{
+		{0x85, func() {
+			RAM[RAM[PC+1]] = AC
+			output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], AC)
+			PC += 2
+		}},
+		{0x95, func() {
+			RAM[RAM[PC+1]+X] = AC
+			//output = fmt.Sprintf("$%02X,X @ = %02X", RAM[PC+1], AC)
+			PC += 2
+		}},
+		{0x8D, func() {
+			RAM[getNextWord()] = AC
+			PC += 3
+		}},
+		{0x9D, func() {
+			RAM[getNextWord()+uint16(X)] = AC
+			PC += 3
+		}},
+		{0x99, func() {
+			RAM[getNextWord()+uint16(Y)] = AC
+			PC += 3
+		}},
 	}
-	// STA zeropage,X
-	FuncMap[0x95] = func() {
-		RAM[RAM[PC+1]+X] = AC
-		PC += 2
-	}
-	// STA absolute
-	FuncMap[0x8D] = func() {
-		RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])] = AC
-		PC += 3
-	}
+	apply(a)
 }
 
 func STX() {
@@ -30,13 +40,6 @@ func STX() {
 	newInst(0x96, "STX", "zeropage,Y", 3)
 	newInst(0x8E, "STX", "absolute", 3)
 
-	/*x := map[byte]func() byte{
-		0x86: zeropage,
-		0x96: zeropageY,
-		0x8E: absolute,
-	}
-	apply(stx, x)
-	*/
 	// STX zeropage
 	FuncMap[0x86] = func() {
 		RAM[RAM[PC+1]] = X
@@ -50,7 +53,9 @@ func STX() {
 	}
 	// STX absolute
 	FuncMap[0x8E] = func() {
-		RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])] = X
+		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
+		RAM[val] = X
+		output = fmt.Sprintf("$%04X", val)
 		PC += 3
 	}
 }
@@ -78,7 +83,9 @@ func STY() {
 	}
 	// STY absolute
 	FuncMap[0x8C] = func() {
-		RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])] = Y
+		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
+		RAM[val] = Y
+		output = fmt.Sprintf("$%04X", val)
 		PC += 3
 	}
 }

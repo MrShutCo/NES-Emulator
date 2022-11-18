@@ -125,6 +125,12 @@ func GetFunctionName(i interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
 }
 
+func ac() byte {
+	output = "A"
+	PC++
+	return AC
+}
+
 func immed() byte {
 	val := RAM[PC+1]
 	output = fmt.Sprintf("#$%02X", RAM[PC+1])

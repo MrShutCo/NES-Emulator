@@ -31,11 +31,8 @@ func DoProgram() {
 	for {
 		output := cpu.Execute()
 		//fmt.Fscanln(os.Stdin)
-		//start := fmt.Sprintf("%04X %02X %02X %02x  ", cpu.PC, cpu.RAM[cpu.PC], cpu.RAM[cpu.PC+1], cpu.RAM[cpu.PC+2])
-		//middle := fmt.Sprintf("%s", cpu.Instructions[cpu.RAM[cpu.PC]])
-		//end := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X", cpu.AC, cpu.X, cpu.Y, cpu.SP)
-		//s := ""
 		f.Write([]byte(output + "\n"))
+		fmt.Print(output + "\n")
 		//fmt.Println(cpu.RAM[0x2000:0x2100])
 	}
 }

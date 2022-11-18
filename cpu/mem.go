@@ -122,6 +122,7 @@ func LoadMaps() {
 	Bitwise()
 	Math()
 	Compare()
+	Transfer()
 }
 
 func SetRam(start uint16, data ...byte) {
@@ -132,18 +133,18 @@ func SetRam(start uint16, data ...byte) {
 
 func SetX(val byte) {
 	setZeroFlag(val == 0x0)
-	setNegativeFlag(val >= 0b1000_0000)
+	setNegativeFlag(val >= 0x80)
 	X = val
 }
 
 func SetY(val byte) {
 	setZeroFlag(val == 0x0)
-	setNegativeFlag(val >= 0b1000_0000)
+	setNegativeFlag(val >= 0x80)
 	Y = val
 }
 
 func SetAC(val byte) {
 	setZeroFlag(val == 0x0)
-	setNegativeFlag(val >= 0b1000_0000)
+	setNegativeFlag(val >= 0x80)
 	AC = val
 }

@@ -19,8 +19,8 @@ func JMP() {
 	}
 	// JSR
 	FuncMap[0x20] = func() {
-		push(highByte(PC))
-		push(lowByte(PC))
+		push(highByte(PC + 2))
+		push(lowByte(PC + 2))
 		PC = bytesToInt16(RAM[PC+2], RAM[PC+1])
 		output = fmt.Sprintf("$%04X", PC)
 	}
@@ -30,7 +30,7 @@ func JMP() {
 		l := pull()
 		h := pull()
 		PC = bytesToInt16(h, l)
-		PC += 3
+		PC += 1
 	}
 }
 
@@ -53,7 +53,9 @@ func Other() {
 
 	// RTI
 	FuncMap[0x40] = func() {
+		oldSR := SR
 		SR = pull()
+		setEmptyFlag(getBit(oldSR, 5))
 		PC_LOW := pull()
 		PC_HIGH := pull()
 		PC = bytesToInt16(PC_HIGH, PC_LOW)

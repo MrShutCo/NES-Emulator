@@ -5,10 +5,6 @@ type foo struct {
 	f      func()
 }
 
-func wrap(f func()) func() {
-	return func() { f() }
-}
-
 func Bitwise() {
 	newInst(0x29, "AND", "immediate", 2)
 	newInst(0x25, "AND", "zeropage", 3)
@@ -57,6 +53,20 @@ func Bitwise() {
 		{0x59, func() { eor(absoluteY) }},
 	}
 	apply(eo)
+
+	newInst(0x4A, "LSR", "immediate", 2)
+	newInst(0x46, "LSR", "zeropage", 3)
+	newInst(0x56, "LSR", "zeropage,X", 4)
+	newInst(0x4E, "LSR", "absolute", 4)
+	newInst(0x5E, "LSR", "absolute,X", 4)
+	ls := []foo{
+		{0x4A, func() { lsr(ac) }},
+		{0x46, func() { lsr(zeropage) }},
+		{0x56, func() { lsr(zeropageX) }},
+		{0x4E, func() { lsr(absolute) }},
+		{0x5E, func() { lsr(absoluteX) }},
+	}
+	apply(ls)
 }
 
 func and(f func() byte) {
@@ -69,4 +79,10 @@ func ora(f func() byte) {
 
 func eor(f func() byte) {
 	SetAC(AC ^ f())
+}
+
+func lsr(f func() byte) {
+	p := f()
+	setCarryFlag(getBit(p, 0))
+	SetAC(p >> 1)
 }

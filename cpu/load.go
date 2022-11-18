@@ -1,27 +1,22 @@
 package cpu
 
-import "fmt"
-
 func LDA() {
 	newInst(0xA9, "LDA", "immediate", 2)
 	newInst(0xA5, "LDA", "zeropage", 3)
 	newInst(0xB5, "LDA", "zeropage,X", 4)
-	// LDA immeadiate
-	FuncMap[0xA9] = func() {
-		SetAC(RAM[PC+1])
-		PC += 2
-		output = fmt.Sprintf("#$%02X", AC)
+	newInst(0xAD, "LDA", "absolute", 4)
+	newInst(0xBD, "LDA", "absolute,X", 4)
+	newInst(0xB9, "LDA", "absolute,Y", 4)
+	a := []foo{
+		{0xA9, func() { SetAC(immed()) }},
+		{0xA5, func() { SetAC(zeropage()) }},
+		{0xB5, func() { SetAC(zeropageX()) }},
+		{0xAD, func() { SetAC(absolute()) }},
+		{0xBD, func() { SetAC(absoluteX()) }},
+		{0xB9, func() { SetAC(absoluteY()) }},
 	}
-	// LDA zeropage
-	FuncMap[0xA5] = func() {
-		SetAC(RAM[RAM[PC+1]]) // Access $00XX
-		PC += 2
-	}
-	// LDA zeropage,X
-	FuncMap[0xB5] = func() {
-		SetAC(RAM[RAM[PC+1]+X])
-		PC += 2
-	}
+	apply(a)
+
 }
 
 func LDX() {
@@ -30,33 +25,14 @@ func LDX() {
 	newInst(0xB6, "LDX", "zeropage,Y", 4)
 	newInst(0xAE, "LDX", "absolute", 4)
 	newInst(0xBE, "LDX", "absolute,Y", 4)
-	// LDX immeadiate
-	FuncMap[0xA2] = func() {
-		SetX(RAM[PC+1])
-		PC += 2
-		output = fmt.Sprintf("#$%02X", X)
+	a := []foo{
+		{0xA2, func() { SetX(immed()) }},
+		{0xA6, func() { SetX(zeropage()) }},
+		{0xB6, func() { SetX(zeropageY()) }},
+		{0xAE, func() { SetX(absolute()) }},
+		{0xBE, func() { SetX(absoluteY()) }},
 	}
-	// LDX zeropage
-	FuncMap[0xA6] = func() {
-		SetX(RAM[RAM[PC+1]]) // Access $00XX
-		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], X)
-		PC += 2
-	}
-	// LDX zeropage,Y
-	FuncMap[0xB6] = func() {
-		SetX(RAM[RAM[PC+1]+Y]) // Access $00XX+Y
-		PC += 2
-	}
-	// LDX absolute
-	FuncMap[0xAE] = func() {
-		SetX(RAM[getNextWord()])
-		PC += 3
-	}
-	// LDX absolute,Y
-	FuncMap[0xBE] = func() {
-		SetX(RAM[getNextWord()+uint16(Y)])
-		PC += 3
-	}
+	apply(a)
 }
 
 func LDY() {
@@ -65,30 +41,33 @@ func LDY() {
 	newInst(0xB4, "LDY", "zeropage,X", 4)
 	newInst(0xAC, "LDY", "absolute", 4)
 	newInst(0xBC, "LDY", "absolute,X", 4)
-	// LDY immeadiate
-	FuncMap[0xA0] = func() {
-		SetY(RAM[PC+1])
-		PC += 2
-		output = fmt.Sprintf("#$%02X", Y)
+	a := []foo{
+		{0xA0, func() { SetY(immed()) }},
+		{0xA4, func() { SetY(zeropage()) }},
+		{0xB4, func() { SetY(zeropageY()) }},
+		{0xAC, func() { SetY(absolute()) }},
+		{0xBC, func() { SetY(absoluteY()) }},
 	}
-	// LDY zeropage
-	FuncMap[0xA4] = func() {
-		SetY(RAM[RAM[PC+1]]) // Access $00YY
-		PC += 2
-	}
-	// LDY zeropage,Y
-	FuncMap[0xB4] = func() {
-		SetY(RAM[RAM[PC+1]+X]) // Access $00YY+X
-		PC += 2
-	}
-	// LDY absolute
-	FuncMap[0xAC] = func() {
-		SetY(RAM[getNextWord()])
-		PC += 3
-	}
-	// LDY absolute,X
-	FuncMap[0xBC] = func() {
-		SetY(RAM[getNextWord()+uint16(X)])
-		PC += 3
-	}
+	apply(a)
+}
+
+func Transfer() {
+	newInst(0xAA, "TAX", "implied", 2)
+	newInst(0xA8, "TAY", "implied", 2)
+	newInst(0xBA, "TSX", "implied", 2)
+	newInst(0x8A, "TXA", "implied", 2)
+	newInst(0x9A, "TXS", "implied", 2)
+	newInst(0x98, "TYA", "implied", 2)
+	// TAX
+	FuncMap[0xAA] = func() { SetX(AC); PC++ }
+	// TAY
+	FuncMap[0xA8] = func() { SetY(AC); PC++ }
+	// TSX
+	FuncMap[0xBA] = func() { SetX(SP); PC++ }
+	// TXA
+	FuncMap[0x8A] = func() { SetAC(X); PC++ }
+	// TXS
+	FuncMap[0x9A] = func() { SP = X; PC++ }
+	// TYA
+	FuncMap[0x98] = func() { SetAC(Y); PC++ }
 }
