@@ -66,16 +66,17 @@ func Other() {
 		val := RAM[RAM[PC+1]]
 		setNegativeFlag(getBit(val, 7))
 		setOverflowFlag(getBit(val, 6))
-		//SR = SR ^ (RAM[RAM[PC+1]] & 0b1100_0000) // Transfer bits 6 and 7
 		setZeroFlag(AC&val == 0)
-		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], AC)
+		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], val)
 		PC += 2
 	}
 	// BIT absolute
 	FuncMap[0x2C] = func() {
-		mem := getNextWord()
-		SR = SR ^ (RAM[mem] & 0b1100_0000) // Transfer bits 6 and 7
-		setZeroFlag(AC&RAM[PC+1] == 0)
+		val := RAM[getNextWord()]
+		setNegativeFlag(getBit(val, 7))
+		setOverflowFlag(getBit(val, 6))
+		setZeroFlag(AC&val == 0)
+		output = fmt.Sprintf("$%04X = %02X", getNextWord(), val)
 		PC += 3
 	}
 

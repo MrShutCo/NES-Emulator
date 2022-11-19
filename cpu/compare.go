@@ -7,6 +7,7 @@ func Compare() {
 	newInst(0xCD, "CMP", "absolute", 4)
 	newInst(0xDD, "CMP", "absolute,X", 4)
 	newInst(0xD9, "CMP", "absolute,Y", 4)
+	newInst(0xC1, "CMP", "(indirect,X)", 5)
 	cmca := []foo{
 		{0xC9, func() { cmp(AC, immed()) }},
 		{0xC5, func() { cmp(AC, zeropage()) }},
@@ -14,6 +15,7 @@ func Compare() {
 		{0xCD, func() { cmp(AC, absolute()) }},
 		{0xDD, func() { cmp(AC, absoluteX()) }},
 		{0xD9, func() { cmp(AC, absoluteY()) }},
+		{0xC1, func() { cmp(AC, indirectX()) }},
 	}
 	apply(cmca)
 

@@ -43,20 +43,11 @@ func newInst(opcode byte, name, mode string, cycles uint8) {
 func Execute() string {
 	instruct := RAM[PC]
 
-	//output := fmt.Sprintf("%04X %02X %02X %02X", PC, instruct)
-
 	start := fmt.Sprintf("%04X  %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
 	middle := Instructions[RAM[PC]].String()
-
-	//fmt.Printf("Executing 0x%x: %s\tat 0x%x\n", instruct, Instructions[instruct].String(), PC)
-
 	end := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
 
-	//if instruct == 0x29 {
-	//}
-
 	if FuncMap[instruct] == nil {
-		//printStack()
 		fmt.Printf("PC: %04X\n", PC)
 		fmt.Printf("Found not implemented instruction: 0x%02X\n", instruct)
 	}
@@ -65,7 +56,7 @@ func Execute() string {
 
 	a := start + middle + " " + output
 	output = ""
-	return fmt.Sprintf("%-43v %29v", a, end)
+	return fmt.Sprintf("%-47v %v", a, end)
 }
 
 func Start() {
@@ -99,7 +90,12 @@ func Load(file string) {
 		fmt.Printf("%s", err)
 	}
 	fmt.Printf("Read %d bytes\n", n)
-	SetRam(0xC000, buffer[0x10:]...) // Copy everything past the header into ROM
+	SetRam(0xC000, buffer[0x10:]) // Copy everything past the header into ROM
+
+	// HUH??? SetRAM is broken TODO
+	for x := 0; x < 0xBFFF; x++ {
+		RAM[x] = 0x00
+	}
 	//SetRam(0x0, buffer[:]...)
 	//fmt.Println(RAM[0x8000:0x9000])
 	//fmt.Println(RAM[0x8000:0xFFFF])
@@ -125,7 +121,7 @@ func LoadMaps() {
 	Transfer()
 }
 
-func SetRam(start uint16, data ...byte) {
+func SetRam(start uint16, data []byte) {
 	for i := range data {
 		RAM[start+uint16(i)] = data[i]
 	}

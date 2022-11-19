@@ -20,39 +20,33 @@ func Math() {
 	}
 	// INC zeropage
 	FuncMap[0xE6] = func() {
-		RAM[RAM[PC+1]]++
-		if RAM[RAM[PC+1]] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 2
+		val := zeropage() + 1
+		RAM[RAM[PC-1]]++
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
+		//output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]]-1)
+		//PC += 2
 	}
 	// INC zeropage,X
 	FuncMap[0xF6] = func() {
-		RAM[RAM[PC+1]+X]++
-		if RAM[RAM[PC+1]+X] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 2
+		val := zeropageX() + 1
+		RAM[RAM[PC-1]+X]++
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
 	}
 	// INC absolute
 	FuncMap[0xEE] = func() {
-		RAM[getNextWord()]++
-		if RAM[getNextWord()] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 3
+		val := absolute() + 1
+		RAM[GetWordAt(PC-2)]++
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
 	}
 	// INC absolute,X
 	FuncMap[0xFE] = func() {
-		RAM[getNextWord()+uint16(X)]++
-		if RAM[getNextWord()+uint16(X)] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 3
+		val := absoluteX() + 1
+		RAM[GetWordAt(PC-2)+uint16(X)]++
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
 	}
 
 	newInst(0xCA, "DEX", "immediate", 5)
@@ -73,39 +67,32 @@ func Math() {
 	}
 	// DEC zeropage
 	FuncMap[0xC6] = func() {
-		RAM[RAM[PC+1]]--
-		if RAM[RAM[PC+1]] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 2
+		val := zeropage() - 1
+		RAM[RAM[PC-1]]--
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
 	}
 	// DEC zeropage,X
 	FuncMap[0xD6] = func() {
-		RAM[RAM[PC+1]+X]--
-		if RAM[RAM[PC+1]+X] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 2
+		val := zeropageX() - 1
+		RAM[RAM[PC-1]+X]--
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
 	}
 	// DEC absolute
 	FuncMap[0xCE] = func() {
-		RAM[getNextWord()]--
-		if RAM[getNextWord()] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 3
+		val := absolute() - 1
+		RAM[GetWordAt(PC-2)]--
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
 	}
 	// DEC absolute,X
 	FuncMap[0xDE] = func() {
-		RAM[getNextWord()+uint16(X)]--
-		if RAM[getNextWord()+uint16(X)] == 0 {
-			setZeroFlag(true)
-			setNegativeFlag(true)
-		}
-		PC += 3
+		val := absoluteX() - 1
+		RAM[GetWordAt(PC-2)+uint16(X)]--
+
+		setZeroFlag(val == 0x00)
+		setNegativeFlag(val >= 0x80)
 	}
 
 	newInst(0x69, "ADC", "immediate", 2)
@@ -114,6 +101,8 @@ func Math() {
 	newInst(0x6D, "ADC", "absolute", 4)
 	newInst(0x7D, "ADC", "absolute,X", 4)
 	newInst(0x79, "ADC", "absolute,Y", 4)
+	newInst(0x61, "ADC", "(indirect,X)", 5)
+
 	ad := []foo{
 		{0x69, func() { adc(immed) }},
 		{0x65, func() { adc(zeropage) }},
@@ -121,6 +110,7 @@ func Math() {
 		{0x6D, func() { adc(absolute) }},
 		{0x7D, func() { adc(absoluteX) }},
 		{0x79, func() { adc(absoluteY) }},
+		{0x61, func() { adc(indirectX) }},
 	}
 	apply(ad)
 
@@ -130,6 +120,7 @@ func Math() {
 	newInst(0xED, "SBC", "absolute", 4)
 	newInst(0xFD, "SBC", "absolute,X", 4)
 	newInst(0xF9, "SBC", "absolute,Y", 4)
+	newInst(0xE1, "SBC", "(indirect,X)", 5)
 	sub := []foo{
 		{0xE9, func() { sbc(immed) }},
 		{0xE5, func() { sbc(zeropage) }},
@@ -137,6 +128,7 @@ func Math() {
 		{0xED, func() { sbc(absolute) }},
 		{0xFD, func() { sbc(absoluteX) }},
 		{0xF9, func() { sbc(absoluteY) }},
+		{0xE1, func() { sbc(indirectX) }},
 	}
 	apply(sub)
 }

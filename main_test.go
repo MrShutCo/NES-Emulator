@@ -44,7 +44,7 @@ func checkAddr(t *testing.T, ours, good string) bool {
 }
 
 func checkParsedOpcode(t *testing.T, ours, good string) bool {
-	return assert.Equal(t, good[16:25], ours[16:25])
+	return assert.Equal(t, good[16:35], ours[16:35])
 }
 
 func checkRegisters(t *testing.T, ours, good string) bool {

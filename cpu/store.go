@@ -8,10 +8,19 @@ func STA() {
 	newInst(0x8D, "STA", "absolute", 4)
 	newInst(0x9D, "STA", "absolute,X", 5)
 	newInst(0x99, "STA", "absolute,Y", 5)
+	newInst(0x81, "STA", "(indirect,X)", 5)
+
 	a := []foo{
 		{0x85, func() {
+			oldVal := RAM[RAM[PC+1]]
+			output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], oldVal) // -1 since it was increased already
+			if oldVal == 0xC6 {
+				PrintPage(0x00)
+				fmt.Printf("value at $%02X: %02X\n", RAM[PC+1], oldVal)
+				fmt.Printf("value of AC: %02X\n", AC)
+				fmt.Printf("value at op: %02X\n", RAM[PC+1])
+			}
 			RAM[RAM[PC+1]] = AC
-			output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], AC)
 			PC += 2
 		}},
 		{0x95, func() {
@@ -20,7 +29,10 @@ func STA() {
 			PC += 2
 		}},
 		{0x8D, func() {
+			word := getNextWord()
+			output = fmt.Sprintf("$%04X = %02X", word, RAM[word])
 			RAM[getNextWord()] = AC
+
 			PC += 3
 		}},
 		{0x9D, func() {
@@ -30,6 +42,10 @@ func STA() {
 		{0x99, func() {
 			RAM[getNextWord()+uint16(Y)] = AC
 			PC += 3
+		}},
+		{0x81, func() {
+			RAM[indirectX16()] = AC
+			PC += 2
 		}},
 	}
 	apply(a)
@@ -42,8 +58,8 @@ func STX() {
 
 	// STX zeropage
 	FuncMap[0x86] = func() {
+		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]])
 		RAM[RAM[PC+1]] = X
-		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], X)
 		PC += 2
 	}
 	// STX zeropage,Y
@@ -54,8 +70,8 @@ func STX() {
 	// STX absolute
 	FuncMap[0x8E] = func() {
 		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
+		output = fmt.Sprintf("$%04X = %02X", val, RAM[val])
 		RAM[val] = X
-		output = fmt.Sprintf("$%04X", val)
 		PC += 3
 	}
 }
@@ -72,8 +88,8 @@ func STY() {
 	newInst(0x8C, "STY", "absolute", 3)
 	// STY zeropage
 	FuncMap[0x84] = func() {
+		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]])
 		RAM[RAM[PC+1]] = Y
-		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], Y)
 		PC += 2
 	}
 	// STY zeropage,X
@@ -84,8 +100,8 @@ func STY() {
 	// STY absolute
 	FuncMap[0x8C] = func() {
 		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
+		output = fmt.Sprintf("$%04X = %02X", val, RAM[val])
 		RAM[val] = Y
-		output = fmt.Sprintf("$%04X", val)
 		PC += 3
 	}
 }

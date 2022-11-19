@@ -32,7 +32,7 @@ func DoProgram() {
 		output := cpu.Execute()
 		//fmt.Fscanln(os.Stdin)
 		f.Write([]byte(output + "\n"))
-		fmt.Print(output + "\n")
+		//fmt.Print(output + "\n")
 		//fmt.Println(cpu.RAM[0x2000:0x2100])
 	}
 }
