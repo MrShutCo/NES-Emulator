@@ -7,7 +7,7 @@ func Compare() {
 	newInst(0xCD, "CMP", "absolute", 4)
 	newInst(0xDD, "CMP", "absolute,X", 4)
 	newInst(0xD9, "CMP", "absolute,Y", 4)
-	newInst(0xC1, "CMP", "(indirect,X)", 5)
+	newInst(0xC1, "CMP", "(indirect,X)", 6)
 	cmca := []foo{
 		{0xC9, func() { cmp(AC, immed()) }},
 		{0xC5, func() { cmp(AC, zeropage()) }},

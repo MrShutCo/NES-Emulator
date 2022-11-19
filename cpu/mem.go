@@ -12,6 +12,7 @@ var AC byte
 var SR byte
 var SP byte
 var PC uint16
+var Cycles uint64
 
 // Useful memory pointers
 
@@ -45,18 +46,20 @@ func Execute() string {
 
 	start := fmt.Sprintf("%04X  %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
 	middle := Instructions[RAM[PC]].String()
-	end := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
+	regData := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
 
 	if FuncMap[instruct] == nil {
 		fmt.Printf("PC: %04X\n", PC)
 		fmt.Printf("Found not implemented instruction: 0x%02X\n", instruct)
 	}
 
+	cycleData := fmt.Sprintf("CYC:%d", Cycles)
 	FuncMap[instruct]()
 
 	a := start + middle + " " + output
 	output = ""
-	return fmt.Sprintf("%-47v %v", a, end)
+	Cycles += uint64(Instructions[instruct].Cycles)
+	return fmt.Sprintf("%-47v %v %v", a, regData, cycleData)
 }
 
 func Start() {
@@ -65,6 +68,7 @@ func Start() {
 	//setOverflowFlag(true) // So BIT can pass
 	SR = 0x24
 	SP = 0xFD
+	Cycles = 7
 }
 
 func Reset() {

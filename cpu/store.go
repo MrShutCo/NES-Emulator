@@ -8,7 +8,7 @@ func STA() {
 	newInst(0x8D, "STA", "absolute", 4)
 	newInst(0x9D, "STA", "absolute,X", 5)
 	newInst(0x99, "STA", "absolute,Y", 5)
-	newInst(0x81, "STA", "(indirect,X)", 5)
+	newInst(0x81, "STA", "(indirect,X)", 6)
 
 	a := []foo{
 		{0x85, func() {
@@ -52,9 +52,9 @@ func STA() {
 }
 
 func STX() {
-	newInst(0x86, "STX", "zeropage", 2)
-	newInst(0x96, "STX", "zeropage,Y", 3)
-	newInst(0x8E, "STX", "absolute", 3)
+	newInst(0x86, "STX", "zeropage", 3)
+	newInst(0x96, "STX", "zeropage,Y", 4)
+	newInst(0x8E, "STX", "absolute", 4)
 
 	// STX zeropage
 	FuncMap[0x86] = func() {
@@ -83,9 +83,9 @@ func stx(f func() byte) {
 }
 
 func STY() {
-	newInst(0x84, "STY", "zeropage", 2)
-	newInst(0x94, "STY", "zeropage,X", 3)
-	newInst(0x8C, "STY", "absolute", 3)
+	newInst(0x84, "STY", "zeropage", 3)
+	newInst(0x94, "STY", "zeropage,X", 4)
+	newInst(0x8C, "STY", "absolute", 4)
 	// STY zeropage
 	FuncMap[0x84] = func() {
 		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]])

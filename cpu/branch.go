@@ -3,6 +3,7 @@ package cpu
 import "fmt"
 
 func Branch() {
+	// TODO: fix paging for cycles
 	newInst(0x90, "BCC", "", 2)
 	newInst(0xB0, "BCS", "", 2)
 	newInst(0xF0, "BEQ", "", 2)
@@ -17,6 +18,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if !isCarrySet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}
@@ -26,6 +28,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if isCarrySet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}
@@ -35,6 +38,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if isZeroSet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}
@@ -44,6 +48,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if isNegativeSet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}
@@ -53,6 +58,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if !isZeroSet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}
@@ -62,6 +68,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if !isNegativeSet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}
@@ -75,6 +82,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if !isOverflowSet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}
@@ -84,6 +92,7 @@ func Branch() {
 		output = fmt.Sprintf("$%04X", val+2)
 		if isOverflowSet() {
 			PC = val
+			Cycles++
 		}
 		PC += 2
 	}

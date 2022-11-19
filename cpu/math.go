@@ -49,12 +49,12 @@ func Math() {
 		setNegativeFlag(val >= 0x80)
 	}
 
-	newInst(0xCA, "DEX", "immediate", 5)
-	newInst(0x88, "DEY", "zeropage", 6)
-	newInst(0xC6, "DEC", "absolute", 6)
-	newInst(0xD6, "DEC", "absolute,X", 7)
-	newInst(0xCE, "DEC", "implied", 2)
-	newInst(0xDE, "DEC", "implied", 2)
+	newInst(0xCA, "DEX", "immediate", 2)
+	newInst(0x88, "DEY", "zeropage", 2)
+	newInst(0xC6, "DEC", "absolute", 5)
+	newInst(0xD6, "DEC", "absolute,X", 6)
+	newInst(0xCE, "DEC", "implied", 6)
+	newInst(0xDE, "DEC", "implied", 7)
 	// DEX
 	FuncMap[0xCA] = func() {
 		SetX(X - 1)
@@ -101,7 +101,7 @@ func Math() {
 	newInst(0x6D, "ADC", "absolute", 4)
 	newInst(0x7D, "ADC", "absolute,X", 4)
 	newInst(0x79, "ADC", "absolute,Y", 4)
-	newInst(0x61, "ADC", "(indirect,X)", 5)
+	newInst(0x61, "ADC", "(indirect,X)", 6)
 
 	ad := []foo{
 		{0x69, func() { adc(immed) }},
@@ -120,7 +120,7 @@ func Math() {
 	newInst(0xED, "SBC", "absolute", 4)
 	newInst(0xFD, "SBC", "absolute,X", 4)
 	newInst(0xF9, "SBC", "absolute,Y", 4)
-	newInst(0xE1, "SBC", "(indirect,X)", 5)
+	newInst(0xE1, "SBC", "(indirect,X)", 6)
 	sub := []foo{
 		{0xE9, func() { sbc(immed) }},
 		{0xE5, func() { sbc(zeropage) }},

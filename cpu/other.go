@@ -4,7 +4,7 @@ import "fmt"
 
 func JMP() {
 	newInst(0x4C, "JMP", "absolute", 3)
-	newInst(0x4C, "JMP", "indirect", 5)
+	newInst(0x6C, "JMP", "indirect", 5)
 	newInst(0x20, "JSR", "", 6)
 	newInst(0x60, "RTS", "", 6)
 	// JMP absolute

@@ -14,7 +14,7 @@ func Bitwise() {
 	newInst(0x2D, "AND", "absolute", 4)
 	newInst(0x3D, "AND", "absolute,X", 4)
 	newInst(0x39, "AND", "absolute,Y", 4)
-	newInst(0x21, "AND", "(indirect,X)", 5)
+	newInst(0x21, "AND", "(indirect,X)", 6)
 	a := []foo{
 		{0x29, func() { and(immed) }},
 		{0x25, func() { and(zeropage) }},
@@ -32,7 +32,7 @@ func Bitwise() {
 	newInst(0x0D, "ORA", "absolute", 4)
 	newInst(0x1D, "ORA", "absolute,X", 4)
 	newInst(0x19, "ORA", "absolute,Y", 4)
-	newInst(0x01, "ORA", "absolute,Y", 4)
+	newInst(0x01, "ORA", "indirect,X", 6)
 	e := []foo{
 		{0x09, func() { ora(immed) }},
 		{0x05, func() { ora(zeropage) }},
@@ -49,7 +49,7 @@ func Bitwise() {
 	newInst(0x55, "EOR", "zeropage,X", 4)
 	newInst(0x4D, "EOR", "absolute", 4)
 	newInst(0x5D, "EOR", "absolute,X", 4)
-	newInst(0x41, "EOR", "absolute,Y", 4)
+	newInst(0x41, "EOR", "indirect,X", 6)
 	eo := []foo{
 		{0x49, func() { eor(immed) }},
 		{0x45, func() { eor(zeropage) }},
@@ -62,10 +62,10 @@ func Bitwise() {
 	apply(eo)
 
 	newInst(0x4A, "LSR", "immediate", 2)
-	newInst(0x46, "LSR", "zeropage", 3)
-	newInst(0x56, "LSR", "zeropage,X", 4)
-	newInst(0x4E, "LSR", "absolute", 4)
-	newInst(0x5E, "LSR", "absolute,X", 4)
+	newInst(0x46, "LSR", "zeropage", 5)
+	newInst(0x56, "LSR", "zeropage,X", 6)
+	newInst(0x4E, "LSR", "absolute", 6)
+	newInst(0x5E, "LSR", "absolute,X", 7)
 	ls := []foo{
 		{0x4A, func() {
 			output := lsr(ac())

@@ -29,7 +29,7 @@ func compare(t *testing.T) {
 		goodScanner.Scan()
 		o := ourScanner.Text()
 		g := goodScanner.Text()
-		if !(checkAddr(t, o, g) && checkParsedOpcode(t, o, g) && checkRegisters(t, o, g)) {
+		if !(checkAddr(t, o, g) && checkParsedOpcode(t, o, g) && checkRegisters(t, o, g) && checkCycles(t, o, g)) {
 			fmt.Printf("expected:\n%s\n%s\nactual:\n%s\n%s\n", lastG, g, lastO, o)
 			return
 		}
@@ -49,4 +49,8 @@ func checkParsedOpcode(t *testing.T, ours, good string) bool {
 
 func checkRegisters(t *testing.T, ours, good string) bool {
 	return assert.Equal(t, good[48:73], ours[48:73])
+}
+
+func checkCycles(t *testing.T, ours, good string) bool {
+	return assert.Equal(t, good[86:], ours[74:])
 }
