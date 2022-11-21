@@ -72,16 +72,16 @@ func Bitwise() {
 			SetAC(output)
 		}},
 		{0x46, func() {
-			RAM[zeropageAddr()] = lsr(zeropage())
+			SetRAM(zeropageAddr(), lsr(zeropage()))
 		}},
 		{0x56, func() {
-			RAM[zeropageXAddr()] = lsr(zeropageX())
+			SetRAM(zeropageXAddr(), lsr(zeropageX()))
 		}},
 		{0x4E, func() {
-			RAM[absoluteAddr()] = lsr(absolute())
+			SetRAM(absoluteAddr(), lsr(absolute()))
 		}},
 		{0x5E, func() {
-			RAM[absoluteXAddr()] = lsr(absoluteX())
+			SetRAM(absoluteXAddr(), lsr(absoluteX()))
 		}},
 	}
 	apply(ls)

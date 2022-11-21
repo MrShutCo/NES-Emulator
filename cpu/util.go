@@ -132,83 +132,83 @@ func ac() byte {
 }
 
 func immed() byte {
-	val := RAM[PC+1]
+	val := GetRAM(PC + 1)
 	output = fmt.Sprintf("#$%02X", RAM[PC+1])
 	PC += 2
 	return val
 }
 
 func zeropage() byte {
-	val := RAM[zeropageAddr()]
+	val := GetRAM(zeropageAddr())
 	output = fmt.Sprintf("$%02X = %02X", zeropageAddr(), val)
 	PC += 2
 	return val
 }
 
 func zeropageAddr() uint16 {
-	return uint16(RAM[PC+1])
+	return uint16(GetRAM(PC + 1))
 }
 
 func zeropageX() byte {
-	val := RAM[zeropageXAddr()]
+	val := GetRAM(zeropageXAddr())
 	PC += 2
 	return val
 }
 
 func zeropageXAddr() uint16 {
-	return uint16(RAM[PC+1]) + uint16(X)
+	return uint16(GetRAM(PC+1)) + uint16(X)
 }
 
 func zeropageY() byte {
-	val := RAM[zeropageYAddr()]
+	val := GetRAM(zeropageYAddr())
 	PC += 2
 	return val
 }
 
 func zeropageYAddr() uint16 {
-	return uint16(RAM[PC+1]) + uint16(Y)
+	return uint16(GetRAM(PC+1)) + uint16(Y)
 }
 
 func absolute() byte {
 	addr := absoluteAddr()
-	val := RAM[addr]
+	val := GetRAM(addr)
 	PC += 3
 	output = fmt.Sprintf("$%04X = %02X", addr, val)
 	return val
 }
 
 func absoluteAddr() uint16 {
-	return bytesToInt16(RAM[PC+2], RAM[PC+1])
+	return bytesToInt16(GetRAM(PC+2), GetRAM(PC+1))
 }
 
 func absoluteX() byte {
 	addr := absoluteXAddr()
 	PC += 3
 	output = fmt.Sprintf("$%04X = %02X", addr, RAM[addr])
-	val := RAM[addr]
+	val := GetRAM(addr)
 	return val
 }
 
 func absoluteXAddr() uint16 {
-	return bytesToInt16(RAM[PC+2], RAM[PC+1]) + uint16(X)
+	return bytesToInt16(GetRAM(PC+2), GetRAM(PC+1)) + uint16(X)
 }
 
 func absoluteY() byte {
 	addr := absoluteYAddr()
-	val := RAM[addr]
+	val := GetRAM(addr)
 	PC += 3
 	output = fmt.Sprintf("$%04X = %02X", addr, RAM[addr])
 	return val
 }
 
 func absoluteYAddr() uint16 {
-	return bytesToInt16(RAM[PC+2], RAM[PC+1]) + uint16(Y)
+	return bytesToInt16(GetRAM(PC+2), GetRAM(PC+1)) + uint16(Y)
 }
 
 func indirectX16() uint16 {
-	zeropageAddr := RAM[PC+1] + X
-	low := RAM[zeropageAddr]
-	hi := RAM[zeropageAddr+1]
+	zeropageAddr := uint16(GetRAM(PC+1) + X)
+	low := GetRAM(zeropageAddr)
+	hi := GetRAM(zeropageAddr + 1)
 	addr := bytesToInt16(hi, low)
 	output = fmt.Sprintf("($%02X,X) @ %02X = %04X = %02X", RAM[PC+1], RAM[PC+1]+X, addr, RAM[addr])
 	return addr
@@ -217,13 +217,13 @@ func indirectX16() uint16 {
 func indirectX() byte {
 	addr := indirectX16()
 	PC += 2
-	return RAM[addr]
+	return GetRAM(addr)
 }
 
 func indirectY() byte {
-	low := RAM[RAM[PC+1]] + Y
+	low := GetRAM(uint16(GetRAM(PC+1))) + Y
 	SetY(low)
-	hi := RAM[PC+1]
+	hi := GetRAM(PC + 1)
 	GetWordAt(bytesToInt16(hi, low))
 	return 0x0
 }

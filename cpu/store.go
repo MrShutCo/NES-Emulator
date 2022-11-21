@@ -1,6 +1,9 @@
 package cpu
 
-import "fmt"
+import (
+	"6502/util"
+	"fmt"
+)
 
 func STA() {
 	newInst(0x85, "STA", "zeropage", 3)
@@ -15,7 +18,7 @@ func STA() {
 			oldVal := RAM[RAM[PC+1]]
 			output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], oldVal) // -1 since it was increased already
 			if oldVal == 0xC6 {
-				PrintPage(0x00)
+				util.PrintPage(RAM[:], 0x00)
 				fmt.Printf("value at $%02X: %02X\n", RAM[PC+1], oldVal)
 				fmt.Printf("value of AC: %02X\n", AC)
 				fmt.Printf("value at op: %02X\n", RAM[PC+1])
@@ -31,20 +34,20 @@ func STA() {
 		{0x8D, func() {
 			word := getNextWord()
 			output = fmt.Sprintf("$%04X = %02X", word, RAM[word])
-			RAM[getNextWord()] = AC
+			SetRAM(getNextWord(), AC)
 
 			PC += 3
 		}},
 		{0x9D, func() {
-			RAM[getNextWord()+uint16(X)] = AC
+			SetRAM(getNextWord()+uint16(X), AC)
 			PC += 3
 		}},
 		{0x99, func() {
-			RAM[getNextWord()+uint16(Y)] = AC
+			SetRAM(getNextWord()+uint16(Y), AC)
 			PC += 3
 		}},
 		{0x81, func() {
-			RAM[indirectX16()] = AC
+			SetRAM(indirectX16(), AC)
 			PC += 2
 		}},
 	}
@@ -71,7 +74,7 @@ func STX() {
 	FuncMap[0x8E] = func() {
 		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
 		output = fmt.Sprintf("$%04X = %02X", val, RAM[val])
-		RAM[val] = X
+		SetRAM(val, X)
 		PC += 3
 	}
 }
@@ -101,7 +104,7 @@ func STY() {
 	FuncMap[0x8C] = func() {
 		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
 		output = fmt.Sprintf("$%04X = %02X", val, RAM[val])
-		RAM[val] = Y
+		SetRAM(val, Y)
 		PC += 3
 	}
 }

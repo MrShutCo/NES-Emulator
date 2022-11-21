@@ -1,6 +1,7 @@
 package cpu
 
 import (
+	"6502/ppu"
 	"fmt"
 	"os"
 )
@@ -19,7 +20,7 @@ var Cycles uint64
 const STACK uint16 = 0x0100 // Is the end of stack
 const SR_RESET = 0b0011_0000
 const NMI_VECTOR uint16 = 0xFFFA
-const RES_VECTOR uint16 = 0xFFFD
+const RES_VECTOR uint16 = 0xFFFC
 const IRQ_VECTOR uint16 = 0xFFFE
 
 var FuncMap map[byte]func()
@@ -64,11 +65,23 @@ func Execute() string {
 
 func Start() {
 	PC = GetWordAt(0xFFFC)
-	//setNegativeFlag(true)
-	//setOverflowFlag(true) // So BIT can pass
+	RAM[0x2002] = 0b1100_0000
 	SR = 0x24
 	SP = 0xFD
 	Cycles = 7
+}
+
+func SetRAM(addr uint16, data byte) {
+	RAM[addr] = data
+	switch addr {
+	case 0x2006:
+	case 0x2007:
+		ppu.DataStruct.WriteBus(addr, data)
+	}
+}
+
+func GetRAM(addr uint16) byte {
+	return RAM[addr]
 }
 
 func Reset() {
@@ -86,23 +99,44 @@ func Load(file string) {
 	}
 	defer f.Close()
 
-	//buffer := make([]byte, 40976)
-	buffer := make([]byte, 1024*64)
+	buffer := make([]byte, 40976)
+	//buffer := make([]byte, 1024*64)
 
 	n, err := f.Read(buffer)
 	if err != nil {
 		fmt.Printf("%s", err)
 	}
 	fmt.Printf("Read %d bytes\n", n)
-	SetRam(0xC000, buffer[0x10:]) // Copy everything past the header into ROM
+
+	// Parse file
+	header := buffer[0x0:0x10]
+
+	if string(header[0x0:0x3]) != "NES" {
+		fmt.Println("ERROR! File format is not NES")
+		return
+	}
+
+	PRGROMSize := header[0x4] // In 16KB units
+	CHRROMSize := header[0x5] // In 8KB units
+	//Flags1 := buffer[0x6]
+
+	// Copy PRGROM
+	ROMSize := 16 * 1024 * int(PRGROMSize)
+	SetRam(0x8000, buffer[0x10:0x10+ROMSize])
+
+	// Copy CHRROM
+	startOfCHRROM := 0x10 + ROMSize
+	CHRSize := 8 * 1024 * int(CHRROMSize)
+	ppu.SetMemory(ppu.PATTERN_TABLE_0, buffer[startOfCHRROM:startOfCHRROM+CHRSize])
+
+	fmt.Printf("PRGROM Size: %04X\nCHRROM Size: %04X\n", ROMSize, CHRSize)
+	fmt.Printf("PRGROM copied from [0x%04X,0x%04X] to [0x%04X, 0x%04X] in CPU\n", 0x10, 0x10+ROMSize, 0x8000, 0x8000+ROMSize)
+	fmt.Printf("CHRROM copied from [0x%04X,0x%04X] to [0x%04X, 0x%04X] in PPU\n", startOfCHRROM, startOfCHRROM+CHRSize, ppu.NAMETABLE_0, ppu.NAMETABLE_0+CHRSize)
 
 	// HUH??? SetRAM is broken TODO
-	for x := 0; x < 0xBFFF; x++ {
+	for x := 0; x < 0x7FFF; x++ {
 		RAM[x] = 0x00
 	}
-	//SetRam(0x0, buffer[:]...)
-	//fmt.Println(RAM[0x8000:0x9000])
-	//fmt.Println(RAM[0x8000:0xFFFF])
 }
 
 func LoadMaps() {
