@@ -1,3 +1,4 @@
 6502
 access.log
 output.txt
+*.exe

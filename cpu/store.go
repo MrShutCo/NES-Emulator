@@ -12,7 +12,7 @@ func STA() {
 	newInst(0x9D, "STA", "absolute,X", 5)
 	newInst(0x99, "STA", "absolute,Y", 5)
 	newInst(0x81, "STA", "(indirect,X)", 6)
-
+	newInst(0x91, "STA", "(indirect),Y", 6)
 	a := []foo{
 		{0x85, func() {
 			oldVal := RAM[RAM[PC+1]]
@@ -27,27 +27,34 @@ func STA() {
 			PC += 2
 		}},
 		{0x95, func() {
-			RAM[RAM[PC+1]+X] = AC
-			//output = fmt.Sprintf("$%02X,X @ = %02X", RAM[PC+1], AC)
+			addr := zeropageXAddr()
+			RAM[addr] = AC
 			PC += 2
 		}},
 		{0x8D, func() {
 			word := getNextWord()
 			output = fmt.Sprintf("$%04X = %02X", word, RAM[word])
 			SetRAM(getNextWord(), AC)
-
 			PC += 3
 		}},
 		{0x9D, func() {
-			SetRAM(getNextWord()+uint16(X), AC)
+			addr := absoluteXAddr()
+			SetRAM(addr, AC)
 			PC += 3
 		}},
 		{0x99, func() {
-			SetRAM(getNextWord()+uint16(Y), AC)
+			addr := absoluteYAddr()
+			SetRAM(addr, AC)
 			PC += 3
 		}},
 		{0x81, func() {
-			SetRAM(indirectX16(), AC)
+			addr := indirectX16()
+			SetRAM(addr, AC)
+			PC += 2
+		}},
+		{0x91, func() {
+			addr := indirectYAddr()
+			SetRAM(addr, AC)
 			PC += 2
 		}},
 	}
@@ -61,28 +68,22 @@ func STX() {
 
 	// STX zeropage
 	FuncMap[0x86] = func() {
-		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]])
-		RAM[RAM[PC+1]] = X
+		addr := zeropageAddr()
+		SetRAM(addr, X)
 		PC += 2
 	}
 	// STX zeropage,Y
 	FuncMap[0x96] = func() {
-		RAM[RAM[PC+1]+Y] = X
+		addr := zeropageYAddr()
+		SetRAM(addr, X)
 		PC += 2
 	}
 	// STX absolute
 	FuncMap[0x8E] = func() {
-		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
-		output = fmt.Sprintf("$%04X = %02X", val, RAM[val])
-		SetRAM(val, X)
+		addr := absoluteAddr()
+		SetRAM(addr, X)
 		PC += 3
 	}
-}
-
-func stx(f func() byte) {
-	oldX := X
-	X = f()
-	output += fmt.Sprintf("%02X", oldX)
 }
 
 func STY() {
@@ -91,20 +92,20 @@ func STY() {
 	newInst(0x8C, "STY", "absolute", 4)
 	// STY zeropage
 	FuncMap[0x84] = func() {
-		output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]])
-		RAM[RAM[PC+1]] = Y
+		addr := zeropageAddr()
+		SetRAM(addr, Y)
 		PC += 2
 	}
 	// STY zeropage,X
 	FuncMap[0x94] = func() {
-		RAM[RAM[PC+1]+Y] = Y
+		addr := zeropageXAddr()
+		SetRAM(addr, Y)
 		PC += 2
 	}
 	// STY absolute
 	FuncMap[0x8C] = func() {
-		val := bytesToInt16(RAM[PC+2], RAM[PC+1])
-		output = fmt.Sprintf("$%04X = %02X", val, RAM[val])
-		SetRAM(val, Y)
+		addr := absoluteAddr()
+		SetRAM(addr, Y)
 		PC += 3
 	}
 }

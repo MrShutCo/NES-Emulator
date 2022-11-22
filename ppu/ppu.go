@@ -3,6 +3,7 @@ package ppu
 import (
 	"6502/util"
 	"fmt"
+	"image/color"
 )
 
 var PPURAM [0x4000]byte
@@ -29,13 +30,40 @@ const MIRRORS_OF_PALETTE = 0x3F20
 
 var DataStruct *PPU
 
-func GetCell(x byte, y byte) byte {
-	var start = int(NAMETABLE_0) + int(30*y) + int(x)
-	return PPURAM[start]
+func GetPatternTable(startByte int, bank uint16) []byte {
+	var start = int(bank) + startByte
+	return PPURAM[start : start+16]
 }
 
 type PPU struct {
 	latch byte
+}
+
+func ShowTile(tile []byte, startX, startY int) []byte {
+	b := []byte{}
+	for y := 0; y < 8; y++ {
+		lower := tile[y]
+		upper := tile[y+8]
+		for x := 0; x < 8; x++ {
+			colour := (lower >> (8 - x) & 1)
+			colour += 2 * (upper >> (8 - x) & 1)
+			posX := int(startX) + (x)
+			posY := int(startY) + (y)
+			switch colour {
+			case 0x0:
+				Image.Set(posX, posY, color.RGBA{50, 50, 50, 255})
+			case 0x1:
+				Image.Set(posX, posY, color.RGBA{100, 100, 100, 255})
+			case 0x2:
+				Image.Set(posX, posY, color.RGBA{150, 150, 150, 255})
+			case 0x3:
+				Image.Set(posX, posY, color.RGBA{255, 255, 255, 255})
+			}
+			b = append(b, colour)
+
+		}
+	}
+	return b
 }
 
 func SetMemory(start uint16, data []byte) {

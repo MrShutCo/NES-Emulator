@@ -8,6 +8,7 @@ func LDA() {
 	newInst(0xBD, "LDA", "absolute,X", 4)
 	newInst(0xB9, "LDA", "absolute,Y", 4)
 	newInst(0xA1, "LDA", "indirect,X", 6)
+	newInst(0xB1, "LDA", "indirect,Y", 5)
 	a := []foo{
 		{0xA9, func() { SetAC(immed()) }},
 		{0xA5, func() { SetAC(zeropage()) }},
@@ -16,6 +17,7 @@ func LDA() {
 		{0xBD, func() { SetAC(absoluteX()) }},
 		{0xB9, func() { SetAC(absoluteY()) }},
 		{0xA1, func() { SetAC(indirectX()) }},
+		{0xB1, func() { SetAC(indirectY()) }},
 	}
 	apply(a)
 
@@ -46,9 +48,9 @@ func LDY() {
 	a := []foo{
 		{0xA0, func() { SetY(immed()) }},
 		{0xA4, func() { SetY(zeropage()) }},
-		{0xB4, func() { SetY(zeropageY()) }},
+		{0xB4, func() { SetY(zeropageX()) }},
 		{0xAC, func() { SetY(absolute()) }},
-		{0xBC, func() { SetY(absoluteY()) }},
+		{0xBC, func() { SetY(absoluteX()) }},
 	}
 	apply(a)
 }

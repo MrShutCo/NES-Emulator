@@ -75,6 +75,7 @@ func Branch() {
 	// BRK
 	FuncMap[0x00] = func() {
 		// TODO
+		Cycles += 7
 	}
 	// BVC
 	FuncMap[0x50] = func() {

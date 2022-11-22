@@ -15,7 +15,14 @@ func JMP() {
 	// JMP indirect
 	// TODO: finish
 	FuncMap[0x6C] = func() { // JMP indirect
-		//PC = RAM[bytesToInt16(RAM[PC+2], RAM[PC+1])]
+		lowAddr := getNextWord()
+		low := RAM[lowAddr]
+		hihiByte := int16(highByte(lowAddr)) << 8
+		hiLowByte := lowByte(lowAddr) + 1
+		hiAddr := hihiByte | int16(hiLowByte) // keep page, mod 256 low bytes
+		hi := RAM[hiAddr]
+		output = fmt.Sprintf("($%04X) = %04X", lowAddr, bytesToInt16(hi, low))
+		PC = bytesToInt16(hi, low)
 	}
 	// JSR
 	FuncMap[0x20] = func() {

@@ -102,6 +102,7 @@ func Math() {
 	newInst(0x7D, "ADC", "absolute,X", 4)
 	newInst(0x79, "ADC", "absolute,Y", 4)
 	newInst(0x61, "ADC", "(indirect,X)", 6)
+	newInst(0x71, "ADC", "(indirect),Y", 5)
 
 	ad := []foo{
 		{0x69, func() { adc(immed) }},
@@ -111,6 +112,7 @@ func Math() {
 		{0x7D, func() { adc(absoluteX) }},
 		{0x79, func() { adc(absoluteY) }},
 		{0x61, func() { adc(indirectX) }},
+		{0x71, func() { adc(indirectY) }},
 	}
 	apply(ad)
 
@@ -121,6 +123,7 @@ func Math() {
 	newInst(0xFD, "SBC", "absolute,X", 4)
 	newInst(0xF9, "SBC", "absolute,Y", 4)
 	newInst(0xE1, "SBC", "(indirect,X)", 6)
+	newInst(0xF1, "SBC", "(indirect),Y", 5)
 	sub := []foo{
 		{0xE9, func() { sbc(immed) }},
 		{0xE5, func() { sbc(zeropage) }},
@@ -129,6 +132,7 @@ func Math() {
 		{0xFD, func() { sbc(absoluteX) }},
 		{0xF9, func() { sbc(absoluteY) }},
 		{0xE1, func() { sbc(indirectX) }},
+		{0xF1, func() { sbc(indirectY) }},
 	}
 	apply(sub)
 }

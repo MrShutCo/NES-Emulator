@@ -56,6 +56,9 @@ func Execute() string {
 
 	cycleData := fmt.Sprintf("CYC:%d", Cycles)
 	FuncMap[instruct]()
+	if PC == 0xD009+3 {
+		fmt.Println("D00B output: " + output)
+	}
 
 	a := start + middle + " " + output
 	output = ""
@@ -76,7 +79,7 @@ func SetRAM(addr uint16, data byte) {
 	switch addr {
 	case 0x2006:
 	case 0x2007:
-		ppu.DataStruct.WriteBus(addr, data)
+		//ppu.DataStruct.WriteBus(addr, data)
 	}
 }
 
@@ -122,7 +125,8 @@ func Load(file string) {
 
 	// Copy PRGROM
 	ROMSize := 16 * 1024 * int(PRGROMSize)
-	SetRam(0x8000, buffer[0x10:0x10+ROMSize])
+	SetRam(0xC000, buffer[0x10:0x10+ROMSize])
+	//SetRam(0x8000, buffer[0x10:0x10+ROMSize])
 
 	// Copy CHRROM
 	startOfCHRROM := 0x10 + ROMSize
@@ -130,8 +134,8 @@ func Load(file string) {
 	ppu.SetMemory(ppu.PATTERN_TABLE_0, buffer[startOfCHRROM:startOfCHRROM+CHRSize])
 
 	fmt.Printf("PRGROM Size: %04X\nCHRROM Size: %04X\n", ROMSize, CHRSize)
-	fmt.Printf("PRGROM copied from [0x%04X,0x%04X] to [0x%04X, 0x%04X] in CPU\n", 0x10, 0x10+ROMSize, 0x8000, 0x8000+ROMSize)
-	fmt.Printf("CHRROM copied from [0x%04X,0x%04X] to [0x%04X, 0x%04X] in PPU\n", startOfCHRROM, startOfCHRROM+CHRSize, ppu.NAMETABLE_0, ppu.NAMETABLE_0+CHRSize)
+	fmt.Printf("PRGROM copied from [0x%04X,0x%04X] to [0x%04X, 0x%04X] in CPU\n", 0x10, 0x10+ROMSize, 0xC000, 0xC000+ROMSize)
+	fmt.Printf("CHRROM copied from [0x%04X,0x%04X] to [0x%04X, 0x%04X] in PPU\n", startOfCHRROM, startOfCHRROM+CHRSize, ppu.PATTERN_TABLE_0, ppu.PATTERN_TABLE_0+CHRSize)
 
 	// HUH??? SetRAM is broken TODO
 	for x := 0; x < 0x7FFF; x++ {

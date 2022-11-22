@@ -13,8 +13,8 @@ func Test_BCC(t *testing.T) {
 
 	// Branch not taken
 	setCarryFlag(true)
-	SetRam(0, 0x90, 0x04, 0x90, 0x05)
-	SetRam(0x7, 0x90, 0xFE) // Move back 2
+	SetRam(0, []byte{0x90, 0x04, 0x90, 0x05})
+	SetRam(0x7, []byte{0x90, 0xFE}) // Move back 2
 	Execute()
 	assert.Equal(t, uint16(0x2), PC)
 
@@ -35,8 +35,8 @@ func Test_BCS(t *testing.T) {
 
 	// Branch not taken
 	setCarryFlag(false)
-	SetRam(0, 0xB0, 0x04, 0xB0, 0x05)
-	SetRam(0x7, 0xB0, 0xFE) // Move back 2
+	SetRam(0, []byte{0xB0, 0x04, 0xB0, 0x05})
+	SetRam(0x7, []byte{0xB0, 0xFE}) // Move back 2
 	Execute()
 	assert.Equal(t, uint16(0x2), PC)
 
