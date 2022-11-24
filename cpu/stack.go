@@ -1,7 +1,5 @@
 package cpu
 
-import "fmt"
-
 func Stack() {
 	newInst(0x48, "PHA", "", 3)
 	newInst(0x08, "PHP", "", 3)
@@ -45,11 +43,4 @@ func pull() byte {
 func push(data byte) {
 	RAM[STACK+uint16(SP)] = data
 	SP--
-}
-
-func printStack() {
-	for i := 0x100; i <= 0x01FF; i++ {
-		fmt.Printf("%02X,", RAM[i])
-	}
-	fmt.Print("\n")
 }

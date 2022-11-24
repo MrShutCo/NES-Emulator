@@ -2,6 +2,14 @@ package cpu
 
 import "fmt"
 
+func NMI_Interrupt() {
+	push(highByte(PC))
+	push(lowByte(PC))
+	push(SR)
+	PC = GetWordAt(NMI_VECTOR)
+	//fmt.Printf("Jumping to %04X\n", PC)
+}
+
 func JMP() {
 	newInst(0x4C, "JMP", "absolute", 3)
 	newInst(0x6C, "JMP", "indirect", 5)

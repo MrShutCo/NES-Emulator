@@ -3,11 +3,19 @@ package main
 import (
 	"6502/cpu"
 	"6502/ppu"
+	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"time"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
+	"golang.org/x/image/font"
+	"golang.org/x/image/font/opentype"
 )
+
+var nes NES
 
 type Game struct{}
 
@@ -15,6 +23,14 @@ type Game struct{}
 // Update is called every tick (1/60 [s] by default).
 func (g *Game) Update(screen *ebiten.Image) error {
 	// Write your game's logical update.
+	start := time.Now()
+	for cpu.Cycles < 29780 {
+		nes.Simulate()
+	}
+	end := time.Now()
+	fmt.Printf("Time difference: %s\n", end.Sub(start).String())
+	cpu.Cycles -= 29780
+	//fmt.Println("Frame")
 	return nil
 }
 
@@ -23,35 +39,74 @@ func (g *Game) Update(screen *ebiten.Image) error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	// Write your game's rendering.
 	//ppu.DrawNameTable0(screen)
-	ppu.DrawImage(screen, ppu.PATTERN_TABLE_0, 0)
-	ppu.DrawImage(screen, ppu.PATTERN_TABLE_1, 150)
+	//ppu.DrawImage(screen, ppu.PATTERN_TABLE_0, 0)
+	//ppu.DrawImage(screen, ppu.PATTERN_TABLE_1, 150)
+	//ppu.PATTERN_TABLE_1, 150)
+
+	screen.DrawImage(ppu.Image, &ebiten.DrawImageOptions{
+		GeoM: ebiten.ScaleGeo(2, 2),
+	})
+	ppu.DrawDebug(screen)
 }
 
 // Layout takes the outside size (e.g., the window size) and returns the (logical) screen size.
 // If you don't have to adjust the screen size with the outside size, just return a fixed size.
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 320, 240
+	return 1024, 768
 }
 
 func main() {
-	//NESGame()
-	ExecuteNESTest()
+	NESGame()
+	//ExecuteNESTest()
 }
 
 func NESGame() {
 	game := &Game{}
 	// Specify the window size as you like. Here, a doubled size is specified.
-	ebiten.SetWindowSize(640, 480)
+	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("Your game's title")
-
+	ebiten.SetMaxTPS(30)
 	cpu.Reset()
 	cpu.LoadMaps()
-	//cpu.Load("nes-test-roms/tutor/tutor.nes")
+	//cpu.Load("nes-te/st-roms/tutor/tutor.nes")
 	cpu.Load("nes_test/donkeykong.nes")
+	//cpu.Load("../nes-test-roms/cpu_dummy_reads/vbl_nmi_timing/7.nmi_timing.nes")
 	cpu.Start()
-	cpu.PC = cpu.GetWordAt(cpu.NMI_VECTOR)
-	Image, _ := ebiten.NewImage(512, 512, ebiten.FilterDefault)
+	ppu.DataStruct = ppu.NewPPU()
+	cpu.PC = cpu.GetWordAt(cpu.RES_VECTOR)
+	Image, _ := ebiten.NewImage(256, 256, ebiten.FilterDefault)
 	ppu.Image = Image
+	nes = NES{
+		PPU: ppu.DataStruct,
+	}
+
+	var err error
+	tt, err := opentype.Parse(fonts.MPlus1pRegular_ttf)
+	if err != nil {
+		panic(err)
+	}
+	ppu.Font, err = opentype.NewFace(tt, &opentype.FaceOptions{
+		Size:    12,
+		DPI:     72,
+		Hinting: font.HintingFull,
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Wait for user to exit, then dump logs
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		os.Truncate("output.log", 0)
+		f, err := os.OpenFile("output.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+		f.Write([]byte(nes.stdout))
+	}()
 
 	// Call ebiten.RunGame to start your game loop.
 	if err := ebiten.RunGame(game); err != nil {
@@ -62,21 +117,31 @@ func NESGame() {
 func ExecuteNESTest() {
 	cpu.Reset()
 	cpu.LoadMaps()
-	cpu.Load("nes_test/nestest.nes")
-	cpu.Start()
-	cpu.PC = 0xC000
+	//cpu.Load("nes_test/colour_test.nes")
 
-	os.Truncate("access.log", 0)
-	f, err := os.OpenFile("access.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	cpu.Load("nes_test/donkeykong.nes")
+	cpu.Start()
+
+	ppu.DataStruct = ppu.NewPPU()
+	cpu.PC = cpu.GetWordAt(cpu.RES_VECTOR)
+
+	os.Truncate("cpu_dummy_reads.log", 0)
+	f, err := os.OpenFile("cpu_dummy_reads.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer f.Close()
 
-	for i := 0; i < 5000; i++ {
-		output := cpu.Execute()
+	for i := 0; i < 10000; i++ {
+		start := time.Now()
+		for cpu.Cycles < 29780 {
+			cpu.Execute()
+		}
+		end := time.Now()
+		fmt.Printf("Time difference: %s\n", end.Sub(start).String())
+		cpu.Cycles -= 29780
 		//fmt.Fscanln(os.Stdin)
-		f.Write([]byte(output + "\n"))
+		//f.Write([]byte(output + "\n"))
 		//fmt.Print(output)
 		//fmt.Println(cpu.RAM[0x2000:0x2100])
 	}

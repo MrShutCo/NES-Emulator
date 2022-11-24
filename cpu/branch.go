@@ -75,7 +75,13 @@ func Branch() {
 	// BRK
 	FuncMap[0x00] = func() {
 		// TODO
+		push(lowByte(PC))
+		push(highByte(PC))
+		push(SR)
+		PC = GetWordAt(IRQ_VECTOR)
+		setBreakFlag(true)
 		Cycles += 7
+		PC++
 	}
 	// BVC
 	FuncMap[0x50] = func() {

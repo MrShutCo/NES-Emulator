@@ -1,7 +1,5 @@
 package cpu
 
-import "fmt"
-
 type foo struct {
 	opcode byte
 	f      func()
@@ -113,7 +111,7 @@ func Bitwise() {
 	newInst(0x6E, "ROR", "absolute", 6)
 	newInst(0x7E, "ROR", "absolute,X", 7)
 	ro := []foo{
-		{0x6A, func() { output := ror(ac()); fmt.Printf("%02X\n", output); SetAC(output) }},
+		{0x6A, func() { output := ror(ac()); SetAC(output) }},
 		{0x66, func() { RAM[zeropageAddr()] = ror(zeropage()) }},
 		{0x76, func() { RAM[zeropageXAddr()] = ror(zeropageX()) }},
 		{0x6E, func() { RAM[absoluteAddr()] = ror(absolute()) }},
@@ -150,9 +148,6 @@ func eor(f func() byte) {
 
 func lsr(val byte) byte {
 	setCarryFlag(getBit(val, 0))
-	//fmt.Printf("%04X\n", PC)
-	//fmt.Printf("LSR p       %02X\n", val)
-	//fmt.Printf("LSR p >> 1: %02X\n", byte(val>>1))
 	val = val >> 1
 	setZeroFlag(val == 0x0)
 	setNegativeFlag(val >= 0x80)

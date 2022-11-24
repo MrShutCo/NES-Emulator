@@ -1,7 +1,6 @@
 package cpu
 
 import (
-	"6502/util"
 	"fmt"
 )
 
@@ -17,24 +16,18 @@ func STA() {
 		{0x85, func() {
 			oldVal := RAM[RAM[PC+1]]
 			output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], oldVal) // -1 since it was increased already
-			if oldVal == 0xC6 {
-				util.PrintPage(RAM[:], 0x00)
-				fmt.Printf("value at $%02X: %02X\n", RAM[PC+1], oldVal)
-				fmt.Printf("value of AC: %02X\n", AC)
-				fmt.Printf("value at op: %02X\n", RAM[PC+1])
-			}
-			RAM[RAM[PC+1]] = AC
+			SetRAM(uint16(RAM[PC+1]), AC)
 			PC += 2
 		}},
 		{0x95, func() {
 			addr := zeropageXAddr()
-			RAM[addr] = AC
+			SetRAM(addr, AC)
 			PC += 2
 		}},
 		{0x8D, func() {
 			word := getNextWord()
 			output = fmt.Sprintf("$%04X = %02X", word, RAM[word])
-			SetRAM(getNextWord(), AC)
+			SetRAM(word, AC)
 			PC += 3
 		}},
 		{0x9D, func() {

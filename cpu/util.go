@@ -244,10 +244,6 @@ func indirectYAddr() uint16 {
 	addr := bytesToInt16(hi, low)
 	addrY := int(addr) + int(Y)
 	// If its on a different page, add a cycle
-	if PC == 0xDB65 {
-		i := 0
-		fmt.Println(i)
-	}
 	if addrY > 0xFFFF {
 		Cycles++
 	} else if highByte(addr) != highByte(uint16(addrY)) {

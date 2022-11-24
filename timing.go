@@ -6,14 +6,30 @@ import (
 )
 
 type NES struct {
-	MasterCycle uint64
+	MasterCycle    uint64
+	PPU            *ppu.PPU
+	IsRunning      bool
+	hasInterrupted bool
+	stdout         string
 }
 
-func (n *NES) Step(count uint) {
-	instruct := cpu.RAM[cpu.PC]
-	cpu.FuncMap[instruct]()
+func (n *NES) Simulate() {
+	if n.PPU.NMI_enabled && !n.hasInterrupted {
+		n.hasInterrupted = true
+		n.interrupt()
+	}
+	oldCycles := cpu.Cycles
+	cpu.Execute()
+	//n.stdout += o + "\n"
+	newCycles := cpu.Cycles
+	doneDrawing1 := n.PPU.StepPPU(byte(newCycles - oldCycles))
+	doneDrawing2 := n.PPU.StepPPU(byte(newCycles - oldCycles))
+	doneDrawing3 := n.PPU.StepPPU(byte(newCycles - oldCycles))
+	if doneDrawing1 || doneDrawing2 || doneDrawing3 {
+		n.hasInterrupted = false
+	}
+}
 
-	n.MasterCycle += uint64(cpu.Instructions[instruct].Cycles)
-
-	ppu.CatchupToCurrent(n.MasterCycle)
+func (n *NES) interrupt() {
+	cpu.NMI_Interrupt()
 }

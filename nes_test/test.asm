@@ -7,7 +7,9 @@
 .endproc
 
 .proc nmi_handler
-  CLD
+  LDA #$45
+  STA $2007,X
+  INX
   RTI
 .endproc
 
