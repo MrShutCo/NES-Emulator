@@ -62,45 +62,47 @@ func (p *PPU) DrawBackground(startPosX uint16) {
 	Image.DrawImage(p.patternTable1SpriteSheet, op)
 }
 
+//var cache = map[uint16]*ebiten.Image{}
+
 // TODO: this should slowly draw image instead of all at once
 func (p *PPU) DrawBackground2(startPosX uint16) {
 	// Cache any tiles for this draw cycle
-	cache := map[uint16]*ebiten.Image{}
+
 	for i := 0; i < 0x3c0; i++ {
 		tileIndex := int(PPURAM[p.nametable+uint16(i)])
 		palette, index := GetBackgroundPalette(i)
 
 		// Only do update if the index AND palette have changed
-		if p.cache[i].NametableIndex == byte(tileIndex) && p.cache[i].Palette == index {
+		if p.cache[i].NametableIndex == tileIndex && p.cache[i].Palette == index {
 			continue
 		}
-		p.cache[i] = struct {
-			NametableIndex byte
-			Palette        byte
-		}{NametableIndex: byte(tileIndex), Palette: index}
+		p.cache[i] = TileCache{
+			NametableIndex: tileIndex,
+			Palette:        index,
+		}
 
 		tileX := i % 32
 		tileY := i / 32
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(float64(tileX*8), float64(tileY*8))
 
-		if cache[uint16(tileIndex)] == nil {
-			sx := (tileIndex % 16) * 8
-			sy := (tileIndex / 16) * 8
+		sx := (tileIndex % 16) * 8
+		sy := (tileIndex / 16) * 8
 
-			img := image.NewPaletted(image.Rect(int(sx), int(sy), int(sx)+8, int(sy)+8), palette)
+		img := image.NewPaletted(image.Rect(int(sx), int(sy), int(sx)+8, int(sy)+8), palette)
 
-			data := p.pattern1[tileIndex*64 : tileIndex*64+64]
+		data := p.pattern1[tileIndex*64 : tileIndex*64+64]
 
-			for j := 0; j < 64; j++ {
-				img.SetColorIndex((j%8)+sx, (j/8)+sy, data[j])
-			}
-
-			imgio, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
-			cache[uint16(tileIndex)] = imgio
+		for j := 0; j < 64; j++ {
+			img.SetColorIndex((j%8)+sx, (j/8)+sy, data[j])
 		}
 
-		Image.DrawImage(cache[uint16(tileIndex)], op)
+		imgio, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+		p.cache[i] = TileCache{
+			NametableIndex: tileIndex, Palette: index, Tile: imgio,
+		}
+
+		Image.DrawImage(p.cache[i].Tile, op)
 	}
 	// PALETTE_0
 	op := &ebiten.DrawImageOptions{}

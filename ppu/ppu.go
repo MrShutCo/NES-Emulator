@@ -79,26 +79,31 @@ func GetBackgroundPalette(tileIndex int) (color.Palette, byte) {
 	}, paletteID
 }
 
+type TileCache struct {
+	NametableIndex int
+	Palette        byte
+	Tile           *ebiten.Image
+}
+
 type PPU struct {
 	latch       byte
 	NMI_enabled bool
 	cycles      int
 	scanlines   int
+	isEvenFrame bool
 
 	nametable              uint16
 	vramIncrement          byte
 	spritePatternTable     uint16
 	backgroundPatternTable uint16
 	is8x8Sprites           bool
-	generateNMIatVBI       bool
+	nmi_occurred           bool
+	nmi_output             bool
 
 	patternTable0SpriteSheet *ebiten.Image
 	patternTable1SpriteSheet *ebiten.Image
 
-	cache map[int]struct {
-		NametableIndex byte
-		Palette        byte
-	}
+	cache map[int]TileCache
 
 	// New logic to support colour
 	// Contains the palette indexes of all background sprites
@@ -128,17 +133,21 @@ func NewPPU() *PPU {
 		pi := i * 3
 		ColorMap[i] = color.RGBA{preset[pi], preset[pi+1], preset[pi+2], 255}
 	}
+	//cache = make(map[uint16]*ebiten.Image)
 
 	return &PPU{
-		vramIncrement:    1,
-		is8x8Sprites:     true,
-		generateNMIatVBI: true,
-		nametable:        NAMETABLE_0,
-		cache: map[int]struct {
-			NametableIndex byte
-			Palette        byte
-		}{},
+		vramIncrement: 1,
+		is8x8Sprites:  true,
+		isEvenFrame:   true,
+		nmi_output:    true,
+		nmi_occurred:  false,
+		nametable:     NAMETABLE_0,
+		cache:         map[int]TileCache{},
 	}
+}
+
+func (p *PPU) ShouldTriggerNMI() bool {
+	return p.nmi_occurred && p.nmi_output
 }
 
 func (p *PPU) StepPPU(cycles byte) bool {
@@ -149,16 +158,20 @@ func (p *PPU) StepPPU(cycles byte) bool {
 	}
 
 	// Before update we weren't in VB, but after we are
-	if p.cycles-int(cycles) < 241 && p.cycles >= 241 {
+	if p.scanlines == 241 {
 		// Generate NMI interrupt if enabled
-		if p.generateNMIatVBI {
-			p.NMI_enabled = true
-		}
+		//if p.nmi_occurred && p.nmi_output {
+		//	p.NMI_enabled = true
+		//}
+		p.nmi_occurred = true
 		//p.DrawBackground(0) TODO: this should be done gradually
 	}
 
 	if p.scanlines >= 262 {
 		p.scanlines = 0
+		p.nmi_occurred = false
+		// Even/odd frame counting
+		p.isEvenFrame = !p.isEvenFrame
 		return true
 	}
 	return false
@@ -181,8 +194,8 @@ func (p *PPU) LoadPaletteV2(table uint16) {
 			lower := tileData[y]
 			upper := tileData[y+8]
 			for x := 0; x < 8; x++ {
-				colour := (lower >> (8 - x) & 1)
-				colour += 2 * (upper >> (8 - x) & 1)
+				colour := (lower >> (7 - x) & 1)
+				colour += 2 * (upper >> (7 - x) & 1)
 				palette[pos] = colour
 				pos++
 			}
@@ -204,8 +217,8 @@ func (p *PPU) PreloadPalleteTable(table uint16) {
 			lower := tileData[y]
 			upper := tileData[y+8]
 			for x := 0; x < 8; x++ {
-				colour := (lower >> (8 - x) & 1)
-				colour += 2 * (upper >> (8 - x) & 1)
+				colour := (lower >> (7 - x) & 1)
+				colour += 2 * (upper >> (7 - x) & 1)
 				pos := y*32 + x*4
 				switch colour {
 				case 0x0:
@@ -262,7 +275,7 @@ func (p *PPU) ppuctrl(data byte) {
 	// Unsure of next bit
 	// 0: off, 1:
 	generateNMIatVBI := (data & 0x80) >> 7
-	p.generateNMIatVBI = generateNMIatVBI == 1
+	p.nmi_output = generateNMIatVBI == 1
 	//fmt.Println("Set PPUCTRL")
 	//fmt.Printf("Sprite Table:     0x%04X\n", p.spritePatternTable)
 	//fmt.Printf("Background Table: 0x%04X\n", p.backgroundPatternTable)
@@ -298,8 +311,9 @@ func (b *PPU) ReadBus(cpuAddr uint16) byte {
 
 func (p *PPU) ppustatus() byte {
 	_PPUADDR = 0x0
-	if p.NMI_enabled {
-		return 0xC0
+	if p.nmi_occurred {
+		p.nmi_occurred = false
+		return 0xC0 //TODO: race condition
 	}
-	return 0xC0
+	return 0b11000000
 }
