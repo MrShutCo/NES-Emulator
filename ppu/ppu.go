@@ -49,34 +49,58 @@ func GetSpritePalette(paletteID byte) color.Palette {
 	}
 }
 
-func GetBackgroundPalette(tileIndex int) (color.Palette, byte) {
-	attrX := tileIndex % 8
-	attrY := tileIndex / 8
-	posX := tileIndex % 16
-	posY := tileIndex / 16
-	attributeByte := PPURAM[0x23C0+attrX+attrY*8]
-	// Need to find which quadrant it is in and get paletteID
-	quadX := posX % 2
-	quadY := posY % 2
-	quadID := quadY<<1 | quadX // Anywhere from 0-3
-
-	// Shift over the required bits, and 0 the rest
-	//paletteID := (attributeByte >> byte(quadID*2))
-	paletteID := attributeByte & 0x3
-	if quadID == 1 {
-		paletteID = attributeByte & (0x3 << 2) >> 2
-	} else if quadID == 2 {
-		paletteID = attributeByte & (0x3 << 4) >> 6
-	} else if quadID == 3 {
-		paletteID = attributeByte & (0x3 << 6) >> 6
-	}
-	// Now to get the actual data
-	addr := 0x3F11 + 4*uint16(paletteID)
+func GetBackgroundPalette(paletteID byte) color.Palette {
+	addr := 0x3F01 + 4*uint16(paletteID)
 	paletteData := PPURAM[addr : addr+3]
 	return color.Palette{
 		ColorMap[PPURAM[0x3F00]&0b00111111], ColorMap[paletteData[0]&0b00111111],
 		ColorMap[paletteData[1]&0b00111111], ColorMap[paletteData[2]&0b00111111],
-	}, paletteID
+	}
+}
+
+// tileIndex = 17
+/*
+	attrX = 1
+	attrY = 2
+	posX = 1
+	posY = 1
+*/
+func GetBackgroundPaletteID(tileIndex int) byte {
+	tileX := tileIndex % 32
+	tileY := tileIndex / 32
+	/*addr := getAttrByteFromTileIndex(tileIndex)
+	// Which 16x16 block it is
+	posX := tileX / 16
+	posY := tileY / 16
+	attributeByte := PPURAM[0x23C0+uint16(addr)]
+	// Need to find which quadrant it is in and get paletteID
+	quadX := posX % 2
+	quadY := posY % 2
+	quadID := (quadY << 1) | quadX // Anywhere from 0-3
+	quadID = 0
+	// Shift over the required bits, and 0 the rest
+	//fmt.Printf("%X,", quadID)
+	return get2BitsFromByte(attributeByte, 2*byte(quadID))*/
+	attrTableIdx := (tileY/4)*8 + tileX
+	attrByte := PPURAM[0x3c0+attrTableIdx]
+	palletX := (byte(tileX) % 4) / 2
+	palletY := (byte(tileY) % 4) / 2
+	pallet := palletY<<1 | palletX
+
+	return (attrByte >> 2 * byte(pallet)) & 0b11
+}
+
+func getAttrByteFromTileIndex(tileIndex int) byte {
+	// position of the 32x32 block
+	tileX := tileIndex % 32
+	tileY := tileIndex / 32
+	attrX := tileX / 8
+	attrY := (tileY / 8)
+	return byte(attrX) + byte(attrY)*8
+}
+
+func get2BitsFromByte(data byte, bit byte) byte {
+	return data & (0x3 << bit) >> bit
 }
 
 type TileCache struct {
@@ -185,6 +209,11 @@ func SetMemory(start uint16, data []byte) {
 	fmt.Printf("%04X\n", start)
 }
 
+// LoadPaletteV2 - starts scanning the PPURAM at the given address 16 bytes at a time
+//   to load a single 8x8 tile. Two bits are read that are 8 bytes apart at a time and used
+//   to index into the palette. p.pattern0 and p.pattern1 are byte arrays of the palette colour per pixel.
+//   All the writes are done sequentually in memory, tile by tile so fetching 64 bytes sequentially in pattern
+//   will correspond to a tile.
 func (p *PPU) LoadPaletteV2(table uint16) {
 	pos := 0
 	palette := make([]byte, 256*256)

@@ -39,8 +39,11 @@ const IRQ_VECTOR uint16 = 0xFFFE
 
 var FuncMap map[byte]func()
 var Instructions map[byte]Instruction
-
 var output string
+
+var strobe bool
+var buttonIndex byte
+var ButtonStatus byte
 
 type Instruction struct {
 	Name           string
@@ -114,6 +117,12 @@ func SetRAM(addr uint16, data byte) {
 		var arr [0x100]byte
 		copy(arr[:], RAM[page:page+0x100])
 		ppu.DataStruct.OAMDMA(arr)
+	case 0x4016:
+		// Reset button index
+		strobe = data&1 == 1
+		if strobe {
+			buttonIndex = 0
+		}
 	}
 }
 
@@ -121,6 +130,15 @@ func GetRAM(addr uint16) byte {
 	switch addr {
 	case 0x2002:
 		return ppu.DataStruct.ReadBus(addr)
+	case 0x4016:
+		if buttonIndex > 7 {
+			return 1
+		}
+		resp := (ButtonStatus & (1 << buttonIndex)) >> buttonIndex
+		if !strobe && buttonIndex <= 7 {
+			buttonIndex++
+		}
+		return resp
 	}
 	return RAM[addr]
 }

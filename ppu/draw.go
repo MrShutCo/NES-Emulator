@@ -2,6 +2,7 @@ package ppu
 
 import (
 	"image"
+	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
 	"golang.org/x/image/font"
@@ -36,6 +37,36 @@ func (p *PPU) DrawSprites2(background *ebiten.Image) {
 	}
 }
 
+func DrawPalettes(background *ebiten.Image, startX, startY float64) {
+	for i := 0; i <= 3; i++ {
+		palette := GetSpritePalette(byte(i))
+		for x := range palette {
+			DrawSolidColour(background, palette[x], 32, startX+float64(x*32), startY+float64(i)*32)
+		}
+		palette = GetBackgroundPalette(byte(i))
+		for x := range palette {
+			DrawSolidColour(background, palette[x], 32, startX+float64(x*32)+128, startY+float64(i)*32)
+		}
+	}
+}
+
+func DrawAttributeTable(background *ebiten.Image, startX, startY float64) {
+
+}
+
+func DrawSolidColour(background *ebiten.Image, color color.Color, size int, x, y float64) {
+	op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(x, y)
+	img, _ := ebiten.NewImage(size, size, ebiten.FilterDefault)
+	data := make([]byte, size*size*4)
+	for i := 0; i < size*size; i++ {
+		r, g, b, a := color.RGBA()
+		data[i*4], data[i*4+1], data[i*4+2], data[i*4+3] = byte(r), byte(g), byte(b), byte(a)
+	}
+	img.ReplacePixels(data)
+	background.DrawImage(img, op)
+}
+
 // TODO: this should slowly draw image instead of all at once
 // DEPRECATED
 func (p *PPU) DrawBackground(startPosX uint16) {
@@ -62,15 +93,15 @@ func (p *PPU) DrawBackground(startPosX uint16) {
 	Image.DrawImage(p.patternTable1SpriteSheet, op)
 }
 
-//var cache = map[uint16]*ebiten.Image{}
-
 // TODO: this should slowly draw image instead of all at once
 func (p *PPU) DrawBackground2(startPosX uint16) {
-	// Cache any tiles for this draw cycle
 
+	//util.PrintPage(PPURAM[:], 0x23)
 	for i := 0; i < 0x3c0; i++ {
 		tileIndex := int(PPURAM[p.nametable+uint16(i)])
-		palette, index := GetBackgroundPalette(i)
+		index := GetBackgroundPaletteID(i)
+
+		palette := GetBackgroundPalette(index)
 
 		// Only do update if the index AND palette have changed
 		if p.cache[i].NametableIndex == tileIndex && p.cache[i].Palette == index {

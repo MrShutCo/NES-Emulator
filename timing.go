@@ -11,6 +11,8 @@ type NES struct {
 	IsRunning      bool
 	hasInterrupted bool
 	stdout         string
+
+	controllerInput byte
 }
 
 func (n *NES) Simulate() {
