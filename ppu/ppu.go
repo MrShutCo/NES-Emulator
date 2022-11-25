@@ -1,12 +1,14 @@
 package ppu
 
 import (
-	"6502/util"
 	"fmt"
 	"image/color"
+
+	"github.com/hajimehoshi/ebiten"
 )
 
 var PPURAM [0x4000]byte
+var OAM [0x100]byte
 
 //var ppuCycles uint64
 
@@ -31,9 +33,50 @@ const MIRRORS_OF_PALETTE = 0x3F20
 
 var DataStruct *PPU
 
+var ColorMap map[byte]color.RGBA
+
 func GetImageFromPatternTable(val byte, bank uint16) []byte {
 	start := bank + uint16(val)*16 // Get the image in question
 	return PPURAM[start : start+16]
+}
+
+func GetSpritePalette(paletteID byte) color.Palette {
+	addr := 0x3F11 + 4*uint16(paletteID)
+	paletteData := PPURAM[addr : addr+3]
+	return color.Palette{
+		color.Transparent, ColorMap[paletteData[0]&0b00111111],
+		ColorMap[paletteData[1]&0b00111111], ColorMap[paletteData[2]&0b00111111],
+	}
+}
+
+func GetBackgroundPalette(tileIndex int) (color.Palette, byte) {
+	attrX := tileIndex % 8
+	attrY := tileIndex / 8
+	posX := tileIndex % 16
+	posY := tileIndex / 16
+	attributeByte := PPURAM[0x23C0+attrX+attrY*8]
+	// Need to find which quadrant it is in and get paletteID
+	quadX := posX % 2
+	quadY := posY % 2
+	quadID := quadY<<1 | quadX // Anywhere from 0-3
+
+	// Shift over the required bits, and 0 the rest
+	//paletteID := (attributeByte >> byte(quadID*2))
+	paletteID := attributeByte & 0x3
+	if quadID == 1 {
+		paletteID = attributeByte & (0x3 << 2) >> 2
+	} else if quadID == 2 {
+		paletteID = attributeByte & (0x3 << 4) >> 6
+	} else if quadID == 3 {
+		paletteID = attributeByte & (0x3 << 6) >> 6
+	}
+	// Now to get the actual data
+	addr := 0x3F11 + 4*uint16(paletteID)
+	paletteData := PPURAM[addr : addr+3]
+	return color.Palette{
+		ColorMap[PPURAM[0x3F00]&0b00111111], ColorMap[paletteData[0]&0b00111111],
+		ColorMap[paletteData[1]&0b00111111], ColorMap[paletteData[2]&0b00111111],
+	}, paletteID
 }
 
 type PPU struct {
@@ -48,15 +91,53 @@ type PPU struct {
 	backgroundPatternTable uint16
 	is8x8Sprites           bool
 	generateNMIatVBI       bool
+
+	patternTable0SpriteSheet *ebiten.Image
+	patternTable1SpriteSheet *ebiten.Image
+
+	cache map[int]struct {
+		NametableIndex byte
+		Palette        byte
+	}
+
+	// New logic to support colour
+	// Contains the palette indexes of all background sprites
+	pattern0 []byte
+	pattern1 []byte
 }
 
 func NewPPU() *PPU {
-	screenBuffer = make([]byte, 256*256*4)
+	ColorMap = map[byte]color.RGBA{}
+	preset := []byte{
+		0x80, 0x80, 0x80, 0x00, 0x3D, 0xA6, 0x00, 0x12, 0xB0, 0x44, 0x00, 0x96, 0xA1, 0x00, 0x5E,
+		0xC7, 0x00, 0x28, 0xBA, 0x06, 0x00, 0x8C, 0x17, 0x00, 0x5C, 0x2F, 0x00, 0x10, 0x45, 0x00,
+		0x05, 0x4A, 0x00, 0x00, 0x47, 0x2E, 0x00, 0x41, 0x66, 0x00, 0x00, 0x00, 0x05, 0x05, 0x05,
+		0x05, 0x05, 0x05, 0xC7, 0xC7, 0xC7, 0x00, 0x77, 0xFF, 0x21, 0x55, 0xFF, 0x82, 0x37, 0xFA,
+		0xEB, 0x2F, 0xB5, 0xFF, 0x29, 0x50, 0xFF, 0x22, 0x00, 0xD6, 0x32, 0x00, 0xC4, 0x62, 0x00,
+		0x35, 0x80, 0x00, 0x05, 0x8F, 0x00, 0x00, 0x8A, 0x55, 0x00, 0x99, 0xCC, 0x21, 0x21, 0x21,
+		0x09, 0x09, 0x09, 0x09, 0x09, 0x09, 0xFF, 0xFF, 0xFF, 0x0F, 0xD7, 0xFF, 0x69, 0xA2, 0xFF,
+		0xD4, 0x80, 0xFF, 0xFF, 0x45, 0xF3, 0xFF, 0x61, 0x8B, 0xFF, 0x88, 0x33, 0xFF, 0x9C, 0x12,
+		0xFA, 0xBC, 0x20, 0x9F, 0xE3, 0x0E, 0x2B, 0xF0, 0x35, 0x0C, 0xF0, 0xA4, 0x05, 0xFB, 0xFF,
+		0x5E, 0x5E, 0x5E, 0x0D, 0x0D, 0x0D, 0x0D, 0x0D, 0x0D, 0xFF, 0xFF, 0xFF, 0xA6, 0xFC, 0xFF,
+		0xB3, 0xEC, 0xFF, 0xDA, 0xAB, 0xEB, 0xFF, 0xA8, 0xF9, 0xFF, 0xAB, 0xB3, 0xFF, 0xD2, 0xB0,
+		0xFF, 0xEF, 0xA6, 0xFF, 0xF7, 0x9C, 0xD7, 0xE8, 0x95, 0xA6, 0xED, 0xAF, 0xA2, 0xF2, 0xDA,
+		0x99, 0xFF, 0xFC, 0xDD, 0xDD, 0xDD, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+	}
+
+	for i := byte(0); i <= 0x3F; i++ {
+		pi := i * 3
+		ColorMap[i] = color.RGBA{preset[pi], preset[pi+1], preset[pi+2], 255}
+	}
+
 	return &PPU{
 		vramIncrement:    1,
 		is8x8Sprites:     true,
 		generateNMIatVBI: true,
 		nametable:        NAMETABLE_0,
+		cache: map[int]struct {
+			NametableIndex byte
+			Palette        byte
+		}{},
 	}
 }
 
@@ -73,7 +154,7 @@ func (p *PPU) StepPPU(cycles byte) bool {
 		if p.generateNMIatVBI {
 			p.NMI_enabled = true
 		}
-		p.DrawBackground(0)
+		//p.DrawBackground(0) TODO: this should be done gradually
 	}
 
 	if p.scanlines >= 262 {
@@ -83,40 +164,74 @@ func (p *PPU) StepPPU(cycles byte) bool {
 	return false
 }
 
-func ShowTile(tile []byte, startX, startY int) []byte {
-	b := []byte{}
-	for y := 0; y < 8; y++ {
-		lower := tile[y]
-		upper := tile[y+8]
-		for x := 0; x < 8; x++ {
-			colour := (lower >> (8 - x) & 1)
-			colour += 2 * (upper >> (8 - x) & 1)
-			posX := int(startX) + (x)
-			posY := int(startY) + (y)
-			switch colour {
-			case 0x0:
-				Image.Set(posX, posY, color.RGBA{50, 50, 50, 255})
-			case 0x1:
-				Image.Set(posX, posY, color.RGBA{100, 100, 100, 255})
-			case 0x2:
-				Image.Set(posX, posY, color.RGBA{150, 150, 150, 255})
-			case 0x3:
-				Image.Set(posX, posY, color.RGBA{255, 255, 255, 255})
-			}
-			b = append(b, colour)
-
-		}
-	}
-	return b
-}
-
 func SetMemory(start uint16, data []byte) {
 	for i := range data {
 		PPURAM[start+uint16(i)] = data[i]
 	}
 	fmt.Printf("Length of data: %04X\n", len(data))
 	fmt.Printf("%04X\n", start)
-	util.PrintPage(data[:], 0x00)
+}
+
+func (p *PPU) LoadPaletteV2(table uint16) {
+	pos := 0
+	palette := make([]byte, 256*256)
+	for i := 0; i < 0x100; i++ {
+		tileData := GetImageFromPatternTable(byte(i), table)
+		for y := 0; y < 8; y++ {
+			lower := tileData[y]
+			upper := tileData[y+8]
+			for x := 0; x < 8; x++ {
+				colour := (lower >> (8 - x) & 1)
+				colour += 2 * (upper >> (8 - x) & 1)
+				palette[pos] = colour
+				pos++
+			}
+		}
+	}
+	if table == PATTERN_TABLE_0 {
+		p.pattern0 = palette
+	} else if table == PATTERN_TABLE_1 {
+		p.pattern1 = palette
+	}
+}
+
+func (p *PPU) PreloadPalleteTable(table uint16) {
+	spriteSheet, _ := ebiten.NewImage(256, 256, ebiten.FilterDefault)
+	for i := 0; i <= 0xFF; i++ {
+		tileData := GetImageFromPatternTable(byte(i), table)
+		data := make([]byte, 64*4)
+		for y := 0; y < 8; y++ {
+			lower := tileData[y]
+			upper := tileData[y+8]
+			for x := 0; x < 8; x++ {
+				colour := (lower >> (8 - x) & 1)
+				colour += 2 * (upper >> (8 - x) & 1)
+				pos := y*32 + x*4
+				switch colour {
+				case 0x0:
+					data[pos], data[pos+1], data[pos+2], data[pos+3] = 50, 50, 50, 255
+				case 0x1:
+					data[pos], data[pos+1], data[pos+2], data[pos+3] = 100, 100, 100, 255
+				case 0x2:
+					data[pos], data[pos+1], data[pos+2], data[pos+3] = 150, 150, 150, 255
+				case 0x3:
+					data[pos], data[pos+1], data[pos+2], data[pos+3] = 255, 255, 255, 255
+				}
+			}
+		}
+		img, _ := ebiten.NewImage(8, 8, ebiten.FilterDefault)
+		img.ReplacePixels(data)
+
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(i%16)*8, float64(i/16)*8)
+		spriteSheet.DrawImage(img, op)
+
+	}
+	if table == PATTERN_TABLE_0 {
+		p.patternTable0SpriteSheet = spriteSheet
+	} else if table == PATTERN_TABLE_1 {
+		p.patternTable1SpriteSheet = spriteSheet
+	}
 }
 
 func (p *PPU) ppuctrl(data byte) {
@@ -151,6 +266,10 @@ func (p *PPU) ppuctrl(data byte) {
 	//fmt.Println("Set PPUCTRL")
 	//fmt.Printf("Sprite Table:     0x%04X\n", p.spritePatternTable)
 	//fmt.Printf("Background Table: 0x%04X\n", p.backgroundPatternTable)
+}
+
+func (p *PPU) OAMDMA(data [0x100]byte) {
+	OAM = data
 }
 
 func (b *PPU) WriteBus(cpuAddr uint16, data byte) {

@@ -109,6 +109,11 @@ func SetRAM(addr uint16, data byte) {
 		fallthrough
 	case 0x2007:
 		ppu.DataStruct.WriteBus(addr, data)
+	case 0x4014:
+		page := uint16(data) << 8
+		var arr [0x100]byte
+		copy(arr[:], RAM[page:page+0x100])
+		ppu.DataStruct.OAMDMA(arr)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
+	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
@@ -22,30 +23,24 @@ type Game struct{}
 // Update proceeds the game state.
 // Update is called every tick (1/60 [s] by default).
 func (g *Game) Update(screen *ebiten.Image) error {
-	// Write your game's logical update.
-	start := time.Now()
 	for cpu.Cycles < 29780 {
 		nes.Simulate()
 	}
-	end := time.Now()
-	fmt.Printf("Time difference: %s\n", end.Sub(start).String())
 	cpu.Cycles -= 29780
-	//fmt.Println("Frame")
 	return nil
 }
 
 // Draw draws the game screen.
 // Draw is called every frame (typically 1/60[s] for 60Hz display).
 func (g *Game) Draw(screen *ebiten.Image) {
-	// Write your game's rendering.
-	//ppu.DrawNameTable0(screen)
-	//ppu.DrawImage(screen, ppu.PATTERN_TABLE_0, 0)
-	//ppu.DrawImage(screen, ppu.PATTERN_TABLE_1, 150)
-	//ppu.PATTERN_TABLE_1, 150)
+	nes.PPU.DrawBackground2(0)
 
 	screen.DrawImage(ppu.Image, &ebiten.DrawImageOptions{
 		GeoM: ebiten.ScaleGeo(2, 2),
 	})
+
+	nes.PPU.DrawSprites2(screen)
+	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
 	ppu.DrawDebug(screen)
 }
 
@@ -64,8 +59,8 @@ func NESGame() {
 	game := &Game{}
 	// Specify the window size as you like. Here, a doubled size is specified.
 	ebiten.SetWindowSize(1024, 768)
-	ebiten.SetWindowTitle("Your game's title")
-	ebiten.SetMaxTPS(30)
+	ebiten.SetWindowTitle("NES Emulator")
+	ebiten.SetMaxTPS(60)
 	cpu.Reset()
 	cpu.LoadMaps()
 	//cpu.Load("nes-te/st-roms/tutor/tutor.nes")
@@ -73,8 +68,12 @@ func NESGame() {
 	//cpu.Load("../nes-test-roms/cpu_dummy_reads/vbl_nmi_timing/7.nmi_timing.nes")
 	cpu.Start()
 	ppu.DataStruct = ppu.NewPPU()
+	ppu.DataStruct.PreloadPalleteTable(ppu.PATTERN_TABLE_0)
+	ppu.DataStruct.PreloadPalleteTable(ppu.PATTERN_TABLE_1)
+	ppu.DataStruct.LoadPaletteV2(ppu.PATTERN_TABLE_0)
+	ppu.DataStruct.LoadPaletteV2(ppu.PATTERN_TABLE_1)
 	cpu.PC = cpu.GetWordAt(cpu.RES_VECTOR)
-	Image, _ := ebiten.NewImage(256, 256, ebiten.FilterDefault)
+	Image, _ := ebiten.NewImage(512, 512, ebiten.FilterDefault)
 	ppu.Image = Image
 	nes = NES{
 		PPU: ppu.DataStruct,
