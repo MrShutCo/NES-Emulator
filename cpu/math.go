@@ -24,7 +24,7 @@ func Math() {
 		RAM[RAM[PC-1]]++
 		setZeroFlag(val == 0x00)
 		setNegativeFlag(val >= 0x80)
-		//output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]]-1)
+		//////output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]]-1)
 		//PC += 2
 	}
 	// INC zeropage,X

@@ -1,7 +1,5 @@
 package cpu
 
-import "fmt"
-
 func Branch() {
 	// TODO: fix paging for cycles
 	newInst(0x90, "BCC", "", 2)
@@ -15,7 +13,7 @@ func Branch() {
 	// BCC
 	FuncMap[0x90] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		////output = fmt.Sprintf("$%04X", val+2)
 		if !isCarrySet() {
 			PC = val
 			Cycles++
@@ -25,7 +23,7 @@ func Branch() {
 	// BCS
 	FuncMap[0xB0] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		////output = fmt.Sprintf("$%04X", val+2)
 		if isCarrySet() {
 			PC = val
 			Cycles++
@@ -35,7 +33,7 @@ func Branch() {
 	// BEQ
 	FuncMap[0xF0] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		//output = fmt.Sprintf("$%04X", val+2)
 		if isZeroSet() {
 			PC = val
 			Cycles++
@@ -45,7 +43,7 @@ func Branch() {
 	// BMI
 	FuncMap[0x30] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		//output = fmt.Sprintf("$%04X", val+2)
 		if isNegativeSet() {
 			PC = val
 			Cycles++
@@ -55,7 +53,7 @@ func Branch() {
 	// BNE
 	FuncMap[0xD0] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		//output = fmt.Sprintf("$%04X", val+2)
 		if !isZeroSet() {
 			PC = val
 			Cycles++
@@ -65,7 +63,7 @@ func Branch() {
 	// BPL
 	FuncMap[0x10] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		//output = fmt.Sprintf("$%04X", val+2)
 		if !isNegativeSet() {
 			PC = val
 			Cycles++
@@ -86,7 +84,7 @@ func Branch() {
 	// BVC
 	FuncMap[0x50] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		//output = fmt.Sprintf("$%04X", val+2)
 		if !isOverflowSet() {
 			PC = val
 			Cycles++
@@ -96,7 +94,7 @@ func Branch() {
 	// BVS
 	FuncMap[0x70] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
-		output = fmt.Sprintf("$%04X", val+2)
+		//output = fmt.Sprintf("$%04X", val+2)
 		if isOverflowSet() {
 			PC = val
 			Cycles++

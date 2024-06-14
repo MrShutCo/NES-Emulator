@@ -7,41 +7,74 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
 	"github.com/hajimehoshi/ebiten/ebitenutil"
 	"github.com/hajimehoshi/ebiten/examples/resources/fonts"
+	"github.com/hajimehoshi/ebiten/inpututil"
 	"golang.org/x/image/font"
 	"golang.org/x/image/font/opentype"
 )
 
 var nes NES
 
+const RIGHT = 0b10000000
+const LEFT = 0b01000000
+const DOWN = 0b00100000
+const UP = 0b00010000
+const START = 0b00001000
+const SELECT = 0b00000100
+const BUTTON_B = 0b00000010
+const BUTTON_A = 0b00000001
+
 type Game struct{}
+
+var keymap map[ebiten.Key]byte
 
 // Update proceeds the game state.
 // Update is called every tick (1/60 [s] by default).
 func (g *Game) Update(screen *ebiten.Image) error {
+
+	for key, val := range keymap {
+		if inpututil.IsKeyJustPressed(key) {
+			cpu.ButtonStatus |= val
+		} else if inpututil.IsKeyJustReleased(key) {
+			cpu.ButtonStatus &= ^byte(val)
+		}
+	}
+
+	//t := time.Now()
 	for cpu.Cycles < 29780 {
 		nes.Simulate()
 	}
+
+	//fmt.Println(time.Since(t).Milliseconds())
 	cpu.Cycles -= 29780
+
+	//s := time.Now()
+	//
+	//a := time.Now()
+	//fmt.Printf("Time difference: %s\n", a.Sub(s).String())
+
 	return nil
 }
 
 // Draw draws the game screen.
 // Draw is called every frame (typically 1/60[s] for 60Hz display).
 func (g *Game) Draw(screen *ebiten.Image) {
-	nes.PPU.DrawBackground2(0)
 
 	screen.DrawImage(ppu.Image, &ebiten.DrawImageOptions{
 		GeoM: ebiten.ScaleGeo(2, 2),
 	})
 
 	nes.PPU.DrawSprites2(screen)
+	ppu.DrawPalettes(screen, 32, 600)
+
+	// Useful for debugging
+	//nes.PPU.DrawDebug()
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
-	ppu.DrawDebug(screen)
 }
 
 // Layout takes the outside size (e.g., the window size) and returns the (logical) screen size.
@@ -56,8 +89,14 @@ func main() {
 }
 
 func NESGame() {
+	f, _ := os.Create(".cpuprofile.pprof")
+	defer f.Close()
+	if err := pprof.StartCPUProfile(f); err != nil {
+		panic(err)
+	}
+	defer pprof.StopCPUProfile()
+
 	game := &Game{}
-	// Specify the window size as you like. Here, a doubled size is specified.
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("NES Emulator")
 	ebiten.SetMaxTPS(60)
@@ -106,6 +145,18 @@ func NESGame() {
 		defer f.Close()
 		f.Write([]byte(nes.stdout))
 	}()
+
+	// Setup input
+	keymap = map[ebiten.Key]byte{
+		ebiten.KeyA:         LEFT,
+		ebiten.KeyD:         RIGHT,
+		ebiten.KeyS:         DOWN,
+		ebiten.KeyW:         UP,
+		ebiten.KeySpace:     BUTTON_A,
+		ebiten.KeyE:         BUTTON_B,
+		ebiten.KeyEnter:     START,
+		ebiten.KeyBackspace: SELECT,
+	}
 
 	// Call ebiten.RunGame to start your game loop.
 	if err := ebiten.RunGame(game); err != nil {

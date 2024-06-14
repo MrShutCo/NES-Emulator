@@ -39,8 +39,11 @@ const IRQ_VECTOR uint16 = 0xFFFE
 
 var FuncMap map[byte]func()
 var Instructions map[byte]Instruction
-
 var output string
+
+var strobe bool
+var buttonIndex byte
+var ButtonStatus byte
 
 type Instruction struct {
 	Name           string
@@ -74,21 +77,22 @@ func Execute() string {
 
 	instruct := RAM[PC]
 
-	start := fmt.Sprintf("%04X  %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
-	middle := Instructions[RAM[PC]].String()
-	regData := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
+	//start := fmt.Sprintf("%04X  %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
+	//middle := Instructions[RAM[PC]].String()
+	//regData := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
 
-	cycleData := fmt.Sprintf("CYC:%d", Cycles)
+	//cycleData := fmt.Sprintf("CYC:%d", Cycles)
 	if FuncMap[instruct] != nil {
 		FuncMap[instruct]()
 	} else {
 		Instructions[instruct].Execute()
 	}
 
-	a := start + middle + " " + output
+	//a := start + middle + " " + output
 	output = ""
 	Cycles += uint64(Instructions[instruct].Cycles)
-	return fmt.Sprintf("%-47v %v %v", a, regData, cycleData)
+	//return fmt.Sprintf("%-47v %v %v", a, regData, cycleData)
+	return ""
 }
 
 func Start() {
@@ -103,17 +107,19 @@ func SetRAM(addr uint16, data byte) {
 	RAM[addr] = data
 	//fmt.Printf("ADDR: %04X\n", addr)
 	switch addr {
-	case 0x2000:
-		fallthrough
-	case 0x2006:
-		fallthrough
-	case 0x2007:
+	case 0x2000, 0x2006, 0x2007:
 		ppu.DataStruct.WriteBus(addr, data)
 	case 0x4014:
 		page := uint16(data) << 8
 		var arr [0x100]byte
 		copy(arr[:], RAM[page:page+0x100])
 		ppu.DataStruct.OAMDMA(arr)
+	case 0x4016:
+		// Reset button index
+		strobe = data&1 == 1
+		if strobe {
+			buttonIndex = 0
+		}
 	}
 }
 
@@ -121,6 +127,15 @@ func GetRAM(addr uint16) byte {
 	switch addr {
 	case 0x2002:
 		return ppu.DataStruct.ReadBus(addr)
+	case 0x4016:
+		if buttonIndex > 7 {
+			return 1
+		}
+		resp := (ButtonStatus & (1 << buttonIndex)) >> buttonIndex
+		if !strobe && buttonIndex <= 7 {
+			buttonIndex++
+		}
+		return resp
 	}
 	return RAM[addr]
 }

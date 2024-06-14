@@ -11,21 +11,20 @@ type NES struct {
 	IsRunning      bool
 	hasInterrupted bool
 	stdout         string
+
+	controllerInput byte
 }
 
 func (n *NES) Simulate() {
-	if n.PPU.NMI_enabled && !n.hasInterrupted {
-		n.hasInterrupted = true
+	if n.PPU.ShouldTriggerNMI() && !n.hasInterrupted {
+		n.hasInterrupted = true // TODO: this may not be fully correct
 		n.interrupt()
 	}
 	oldCycles := cpu.Cycles
 	cpu.Execute()
-	//n.stdout += o + "\n"
-	newCycles := cpu.Cycles
-	doneDrawing1 := n.PPU.StepPPU(byte(newCycles - oldCycles))
-	doneDrawing2 := n.PPU.StepPPU(byte(newCycles - oldCycles))
-	doneDrawing3 := n.PPU.StepPPU(byte(newCycles - oldCycles))
-	if doneDrawing1 || doneDrawing2 || doneDrawing3 {
+	cycleDiff := cpu.Cycles - oldCycles
+	doneDrawing1 := n.PPU.StepPPU(byte(cycleDiff * 3))
+	if doneDrawing1 {
 		n.hasInterrupted = false
 	}
 }
