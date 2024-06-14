@@ -3,8 +3,8 @@ package cpu
 import (
 	"6502/ppu"
 	"fmt"
+	"io/ioutil"
 	"log"
-	"os"
 )
 
 var RAM [0xffff + 1]byte
@@ -149,20 +149,23 @@ func Reset() {
 }
 
 func Load(file string) {
-	f, err := os.OpenFile(file, os.O_RDONLY, 0644)
+	//f, err := os.OpenFile(file, os.O_RDONLY, 0644)
+	//if err != nil {
+	//fmt.Printf("%s", err)
+	//}
+	//defer f.Close()
+
+	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
 		fmt.Printf("%s", err)
 	}
-	defer f.Close()
-
-	buffer := make([]byte, 40976)
 	//buffer := make([]byte, 1024*64)
 
-	n, err := f.Read(buffer)
+	/*n, err := f.Rea(buffer)
 	if err != nil {
 		fmt.Printf("%s", err)
 	}
-	fmt.Printf("Read %d bytes\n", n)
+	fmt.Printf("Read %d bytes\n", n)*/
 
 	// Parse file
 	header := buffer[0x0:0x10]
@@ -171,6 +174,7 @@ func Load(file string) {
 		fmt.Println("ERROR! File format is not NES")
 		return
 	}
+	n := len(buffer)
 
 	PRGROMSize := header[0x4] // In 16KB units
 	CHRROMSize := header[0x5] // In 8KB units
