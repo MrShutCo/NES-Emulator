@@ -58,7 +58,7 @@ func DrawPalettes(background *ebiten.Image, startX, startY float64) {
 			drawX := startX + float64(x)*32
 			drawY := startY + float64(i)*32
 			DrawSolidColour(background, palette[x], 32, drawX, drawY)
-			text.Draw(background, fmt.Sprintf("%x", PPURAM[0x3F11+4*i+x]), Font, int(drawX)+16, int(drawY)+16, color.White)
+			//text.Draw(background, fmt.Sprintf("%x", PPURAM[0x3F11+4*i+x]), Font, int(drawX)+16, int(drawY)+16, color.White)
 		}
 		palette = GetBackgroundPalette(byte(i))
 		for x := range palette {
@@ -84,32 +84,6 @@ func DrawSolidColour(background *ebiten.Image, color color.Color, size int, x, y
 	background.DrawImage(img, op)
 }
 
-// TODO: this should slowly draw image instead of all at once
-// DEPRECATED
-func (p *PPU) DrawBackground(startPosX uint16) {
-	for i := 0; i < 0x3c0; i++ {
-		tileIndex := PPURAM[p.nametable+uint16(i)]
-		tileX := i % 32
-		tileY := i / 32
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(float64(tileX*8), float64(tileY*8))
-
-		sx := (int(tileIndex) % 16) * 8
-		sy := (int(tileIndex) / 16) * 8
-		Image.DrawImage(p.patternTable1SpriteSheet.SubImage(image.Rect(sx, sy, sx+8, sy+8)).(*ebiten.Image), op)
-		//ShowTile(tileData, x*8, y*8)
-	}
-	// PALETTE_0
-	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(256+64, 0)
-	Image.DrawImage(p.patternTable0SpriteSheet, op)
-
-	// PALETTE_1
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(float64(256+64), float64(128+32))
-	Image.DrawImage(p.patternTable1SpriteSheet, op)
-}
-
 func equalPalette(p1, p2 color.Palette) bool {
 	if (p1 == nil) != (p2 == nil) {
 		return false
@@ -120,6 +94,21 @@ func equalPalette(p1, p2 color.Palette) bool {
 		}
 	}
 	return true
+}
+
+func (p *PPU) DrawDebug() {
+	for x := 0; x < 32; x++ {
+		for y := 0; y < 30; y++ {
+			text.Draw(Image, fmt.Sprintf("%x", GetBackgroundPaletteID(y*32+x)), Font, x*8, y*8, color.White)
+		}
+	}
+	/*for x := 0; x <= 0x0F; x++ {
+		for y := 0; y <= 0x03; y++ {
+			c := ppu.ColorMap[byte(y*0x10+x)]
+			ppu.DrawSolidColour(screen, c, 32, float64(x)*32, 600+float64(y)*32)
+		}
+
+	}*/
 }
 
 func (p *PPU) DrawBackgroundRow(startY int) {
@@ -157,14 +146,14 @@ func (p *PPU) DrawBackgroundRow(startY int) {
 		Image.DrawImage(imgio, op)
 	}
 	// PALETTE_0
-	/*op := &ebiten.DrawImageOptions{}
+	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(256+64, 0)
 	Image.DrawImage(p.patternTable0SpriteSheet, op)
 
 	// PALETTE_1
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(256+64), float64(128+32))
-	Image.DrawImage(p.patternTable1SpriteSheet, op)*/
+	Image.DrawImage(p.patternTable1SpriteSheet, op)
 }
 
 // TODO: this should slowly draw image instead of all at once
@@ -220,9 +209,4 @@ func (p *PPU) DrawBackground2(startPosX uint16) {
 func (p *PPU) GetAttributeIndex(tileX, tileY byte) uint16 {
 	addr := (0x3C0 + p.nametable)
 	return addr + uint16(tileY)*8 + uint16(tileX)
-}
-
-func DrawDebug(screen *ebiten.Image) {
-	//t := fmt.Sprintf("PPUADDR: 0x%04X\n", _PPUADDR)
-	//text.Draw(screen, t, Font, 700, 40, color.White)
 }

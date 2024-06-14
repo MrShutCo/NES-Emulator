@@ -70,16 +70,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	})
 
 	nes.PPU.DrawSprites2(screen)
-	ppu.DrawPalettes(screen, 500, 600)
-	for x := 0; x <= 0x0F; x++ {
-		for y := 0; y <= 0x03; y++ {
-			c := ppu.ColorMap[byte(y*0x10+x)]
-			ppu.DrawSolidColour(screen, c, 32, float64(x)*32, 600+float64(y)*32)
-		}
+	ppu.DrawPalettes(screen, 32, 600)
 
-	}
+	// Useful for debugging
+	//nes.PPU.DrawDebug()
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
-	ppu.DrawDebug(screen)
 }
 
 // Layout takes the outside size (e.g., the window size) and returns the (logical) screen size.

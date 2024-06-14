@@ -2,7 +2,6 @@ package ppu
 
 import (
 	"fmt"
-	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
@@ -59,57 +58,26 @@ func GetBackgroundPalette(paletteID byte) color.Palette {
 	}
 }
 
-// tileIndex = 17
-/*
-	attrX = 1
-	attrY = 2
-	posX = 1
-	posY = 1
-*/
 func GetBackgroundPaletteID(tileIndex int) byte {
-
-	lowerByte := tileIndex % 8
-	upperByte := tileIndex / 8
-	address := 0x23C0 + lowerByte + 8*upperByte
+	x := (tileIndex % 32) / 4
+	y := (tileIndex / 32) / 4
+	address := 0x23C0 + x + 8*y
 	attributeByte := PPURAM[address]
 
 	// Now we need to figure out what quadrant we are in
-	cellX := (tileIndex % 32) % 2
-	cellY := (tileIndex / 32) % 2
+	cellX := (tileIndex % 32) % 4
+	cellY := (tileIndex / 32) % 4
 
-	if cellX == 0 && cellY == 0 {
+	if cellX < 2 && cellY < 2 {
 		return attributeByte & 0x03
 	}
-	if cellX == 1 && cellY == 0 {
+	if cellX >= 2 && cellY < 2 {
 		return (attributeByte >> 2) & 0x03
 	}
-	if cellX == 0 && cellY == 1 {
+	if cellX < 2 && cellY >= 2 {
 		return (attributeByte >> 4) & 0x03
 	}
 	return (attributeByte >> 6) & 0x03
-
-	/*addr := getAttrByteFromTileIndex(tileIndex)
-	// Which 16x16 block it is
-	posX := tileX / 16
-	posY := tileY / 16
-	attributeByte := PPURAM[0x23C0+uint16(addr)]
-	// Need to find which quadrant it is in and get paletteID
-	quadX := posX % 2
-	quadY := posY % 2
-	quadID := (quadY << 1) | quadX // Anywhere from 0-3
-	quadID = 0
-	// Shift over the required bits, and 0 the rest
-	//fmt.Printf("%X,", quadID)
-	return get2BitsFromByte(attributeByte, 2*byte(quadID))*/
-	/*tileX := tileIndex % 32
-	tileY := tileIndex / 32
-	attrTableIdx := (tileY/4)*8 + (tileX / 4)
-	attrByte := PPURAM[0x3c0+attrTableIdx]
-	palletX := (byte(tileX) % 4) / 2
-	palletY := (byte(tileY) % 4) / 2
-	pallet := (palletY << 1) | palletX
-
-	return ((attrByte >> 2) * byte(pallet)) & 0b11*/
 }
 
 func getAttrByteFromTileIndex(tileIndex int) byte {
@@ -148,9 +116,6 @@ type PPU struct {
 
 	patternTable0SpriteSheet *ebiten.Image
 	patternTable1SpriteSheet *ebiten.Image
-
-	backgroundTiles      [][]image.PalettedImage
-	backgroundTileImages [][]*ebiten.Image
 
 	cache []TileCache
 
