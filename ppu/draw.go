@@ -104,7 +104,7 @@ func (p *PPU) DrawDebug() {
 	}
 	/*for x := 0; x <= 0x0F; x++ {
 		for y := 0; y <= 0x03; y++ {
-			c := ppu.ColorMap[byte(y*0x10+x)]
+			c := ppu.ColorList[byte(y*0x10+x)]
 			ppu.DrawSolidColour(screen, c, 32, float64(x)*32, 600+float64(y)*32)
 		}
 

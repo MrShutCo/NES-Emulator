@@ -33,7 +33,7 @@ const MIRRORS_OF_PALETTE = 0x3F20
 
 var DataStruct *PPU
 
-var ColorMap map[byte]color.RGBA
+var ColorList []color.RGBA
 
 func GetImageFromPatternTable(val byte, bank uint16) []byte {
 	start := bank + uint16(val)*16 // Get the image in question
@@ -44,8 +44,8 @@ func GetSpritePalette(paletteID byte) color.Palette {
 	addr := 0x3F11 + 4*uint16(paletteID)
 	paletteData := PPURAM[addr : addr+3]
 	return color.Palette{
-		color.Transparent, ColorMap[paletteData[0]&0b00111111],
-		ColorMap[paletteData[1]&0b00111111], ColorMap[paletteData[2]&0b00111111],
+		color.Transparent, ColorList[paletteData[0]&0b00111111],
+		ColorList[paletteData[1]&0b00111111], ColorList[paletteData[2]&0b00111111],
 	}
 }
 
@@ -53,8 +53,8 @@ func GetBackgroundPalette(paletteID byte) color.Palette {
 	addr := 0x3F01 + 4*uint16(paletteID)
 	paletteData := PPURAM[addr : addr+3]
 	return color.Palette{
-		ColorMap[PPURAM[0x3F00]&0b00111111], ColorMap[paletteData[0]&0b00111111],
-		ColorMap[paletteData[1]&0b00111111], ColorMap[paletteData[2]&0b00111111],
+		ColorList[PPURAM[0x3F00]&0b00111111], ColorList[paletteData[0]&0b00111111],
+		ColorList[paletteData[1]&0b00111111], ColorList[paletteData[2]&0b00111111],
 	}
 }
 
@@ -126,7 +126,7 @@ type PPU struct {
 }
 
 func NewPPU() *PPU {
-	ColorMap = map[byte]color.RGBA{}
+
 	/*preset := []byte{
 		0x80, 0x80, 0x80, 0x00, 0x3D, 0xA6, 0x00, 0x12, 0xB0, 0x44, 0x00, 0x96, 0xA1, 0x00, 0x5E,
 		0xC7, 0x00, 0x28, 0xBA, 0x06, 0x00, 0x8C, 0x17, 0x00, 0x5C, 0x2F, 0x00, 0x10, 0x45, 0x00,
@@ -208,10 +208,11 @@ func NewPPU() *PPU {
 		0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00,
 	}
+	ColorList = make([]color.RGBA, len(preset)/3)
 
 	for i := byte(0); i <= 0x3F; i++ {
 		pi := i * 3
-		ColorMap[i] = color.RGBA{preset[pi], preset[pi+1], preset[pi+2], 255}
+		ColorList[i] = color.RGBA{preset[pi], preset[pi+1], preset[pi+2], 255}
 	}
 	//cache = make(map[uint16]*ebiten.Image)
 
@@ -391,6 +392,8 @@ func (b *PPU) WriteBus(cpuAddr uint16, data byte) {
 	switch cpuAddr {
 	case 0x2000:
 		b.ppuctrl(data)
+	case 0x2005:
+
 	case 0x2006:
 		_PPUADDR = _PPUADDR << 8           // Shift lo -> high
 		_PPUADDR = _PPUADDR & 0xFF00       // Set lo = 0
