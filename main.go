@@ -43,21 +43,25 @@ func (g *Game) Update(screen *ebiten.Image) error {
 			cpu.ButtonStatus &= ^byte(val)
 		}
 	}
+	//t := time.Now()
 	for cpu.Cycles < 29780 {
 		nes.Simulate()
 	}
-	// TODO: make this nicer, and dont store this publicly
-	//t := time.Now()
 
 	//fmt.Println(time.Since(t).Milliseconds())
 	cpu.Cycles -= 29780
+
+	//s := time.Now()
+	nes.PPU.DrawBackground2(0)
+	//a := time.Now()
+	//fmt.Printf("Time difference: %s\n", a.Sub(s).String())
+
 	return nil
 }
 
 // Draw draws the game screen.
 // Draw is called every frame (typically 1/60[s] for 60Hz display).
 func (g *Game) Draw(screen *ebiten.Image) {
-	nes.PPU.DrawBackground2(0)
 
 	screen.DrawImage(ppu.Image, &ebiten.DrawImageOptions{
 		GeoM: ebiten.ScaleGeo(2, 2),

@@ -18,6 +18,17 @@ func (p *PPU) DrawSprites2(background *ebiten.Image) {
 		tileIndex := int(OAM[i+1])
 		tileAttr := OAM[i+2]
 		op := &ebiten.DrawImageOptions{}
+
+		flipVertical := tileAttr&0x80 == 0x80
+		flipHorizontal := tileAttr&0x40 == 0x40
+
+		if flipHorizontal {
+			op.GeoM.Scale(-1, 1)
+		}
+		if flipVertical {
+			op.GeoM.Scale(1, -1)
+		}
+
 		op.GeoM.Translate(float64(posX), float64(posY))
 		op.GeoM.Scale(2, 2)
 
@@ -95,8 +106,6 @@ func (p *PPU) DrawBackground(startPosX uint16) {
 
 // TODO: this should slowly draw image instead of all at once
 func (p *PPU) DrawBackground2(startPosX uint16) {
-
-	//util.PrintPage(PPURAM[:], 0x23)
 	for i := 0; i < 0x3c0; i++ {
 		tileIndex := int(PPURAM[p.nametable+uint16(i)])
 		index := GetBackgroundPaletteID(i)
@@ -117,8 +126,8 @@ func (p *PPU) DrawBackground2(startPosX uint16) {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(float64(tileX*8), float64(tileY*8))
 
-		sx := (tileIndex % 16) * 8
-		sy := (tileIndex / 16) * 8
+		sx := (tileIndex % 32) * 8
+		sy := (tileIndex / 32) * 8
 
 		img := image.NewPaletted(image.Rect(int(sx), int(sy), int(sx)+8, int(sy)+8), palette)
 
@@ -133,17 +142,17 @@ func (p *PPU) DrawBackground2(startPosX uint16) {
 			NametableIndex: tileIndex, Palette: index, Tile: imgio,
 		}
 
-		Image.DrawImage(p.cache[i].Tile, op)
+		Image.DrawImage(imgio, op)
 	}
 	// PALETTE_0
-	op := &ebiten.DrawImageOptions{}
+	/*op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(256+64, 0)
 	Image.DrawImage(p.patternTable0SpriteSheet, op)
 
 	// PALETTE_1
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(float64(256+64), float64(128+32))
-	Image.DrawImage(p.patternTable1SpriteSheet, op)
+	Image.DrawImage(p.patternTable1SpriteSheet, op)*/
 }
 
 func (p *PPU) GetAttributeIndex(tileX, tileY byte) uint16 {

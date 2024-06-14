@@ -81,7 +81,7 @@ func GetBackgroundPaletteID(tileIndex int) byte {
 	// Shift over the required bits, and 0 the rest
 	//fmt.Printf("%X,", quadID)
 	return get2BitsFromByte(attributeByte, 2*byte(quadID))*/
-	attrTableIdx := (tileY/4)*8 + tileX
+	attrTableIdx := (tileY/4)*8 + (tileX / 4)
 	attrByte := PPURAM[0x3c0+attrTableIdx]
 	palletX := (byte(tileX) % 4) / 2
 	palletY := (byte(tileY) % 4) / 2
@@ -188,7 +188,7 @@ func (p *PPU) StepPPU(cycles byte) bool {
 		//	p.NMI_enabled = true
 		//}
 		p.nmi_occurred = true
-		//p.DrawBackground(0) TODO: this should be done gradually
+		//p.DrawBackground2(0) //TODO: this should be done gradually
 	}
 
 	if p.scanlines >= 262 {

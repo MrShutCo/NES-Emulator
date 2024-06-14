@@ -17,7 +17,7 @@ type NES struct {
 
 func (n *NES) Simulate() {
 	if n.PPU.ShouldTriggerNMI() && !n.hasInterrupted {
-		n.hasInterrupted = true // TODO: this may not be fully correcy
+		n.hasInterrupted = true // TODO: this may not be fully correct
 		n.interrupt()
 	}
 	oldCycles := cpu.Cycles
