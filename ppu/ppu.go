@@ -2,6 +2,7 @@ package ppu
 
 import (
 	"fmt"
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
@@ -66,8 +67,27 @@ func GetBackgroundPalette(paletteID byte) color.Palette {
 	posY = 1
 */
 func GetBackgroundPaletteID(tileIndex int) byte {
-	tileX := tileIndex % 32
-	tileY := tileIndex / 32
+
+	lowerByte := tileIndex % 8
+	upperByte := tileIndex / 8
+	address := 0x23C0 + lowerByte + 8*upperByte
+	attributeByte := PPURAM[address]
+
+	// Now we need to figure out what quadrant we are in
+	cellX := (tileIndex % 32) % 2
+	cellY := (tileIndex / 32) % 2
+
+	if cellX == 0 && cellY == 0 {
+		return attributeByte & 0x03
+	}
+	if cellX == 1 && cellY == 0 {
+		return (attributeByte >> 2) & 0x03
+	}
+	if cellX == 0 && cellY == 1 {
+		return (attributeByte >> 4) & 0x03
+	}
+	return (attributeByte >> 6) & 0x03
+
 	/*addr := getAttrByteFromTileIndex(tileIndex)
 	// Which 16x16 block it is
 	posX := tileX / 16
@@ -81,13 +101,15 @@ func GetBackgroundPaletteID(tileIndex int) byte {
 	// Shift over the required bits, and 0 the rest
 	//fmt.Printf("%X,", quadID)
 	return get2BitsFromByte(attributeByte, 2*byte(quadID))*/
+	/*tileX := tileIndex % 32
+	tileY := tileIndex / 32
 	attrTableIdx := (tileY/4)*8 + (tileX / 4)
 	attrByte := PPURAM[0x3c0+attrTableIdx]
 	palletX := (byte(tileX) % 4) / 2
 	palletY := (byte(tileY) % 4) / 2
-	pallet := palletY<<1 | palletX
+	pallet := (palletY << 1) | palletX
 
-	return (attrByte >> 2 * byte(pallet)) & 0b11
+	return ((attrByte >> 2) * byte(pallet)) & 0b11*/
 }
 
 func getAttrByteFromTileIndex(tileIndex int) byte {
@@ -105,7 +127,7 @@ func get2BitsFromByte(data byte, bit byte) byte {
 
 type TileCache struct {
 	NametableIndex int
-	Palette        byte
+	Palette        color.Palette
 	Tile           *ebiten.Image
 }
 
@@ -127,7 +149,10 @@ type PPU struct {
 	patternTable0SpriteSheet *ebiten.Image
 	patternTable1SpriteSheet *ebiten.Image
 
-	cache map[int]TileCache
+	backgroundTiles      [][]image.PalettedImage
+	backgroundTileImages [][]*ebiten.Image
+
+	cache []TileCache
 
 	// New logic to support colour
 	// Contains the palette indexes of all background sprites
@@ -137,7 +162,7 @@ type PPU struct {
 
 func NewPPU() *PPU {
 	ColorMap = map[byte]color.RGBA{}
-	preset := []byte{
+	/*preset := []byte{
 		0x80, 0x80, 0x80, 0x00, 0x3D, 0xA6, 0x00, 0x12, 0xB0, 0x44, 0x00, 0x96, 0xA1, 0x00, 0x5E,
 		0xC7, 0x00, 0x28, 0xBA, 0x06, 0x00, 0x8C, 0x17, 0x00, 0x5C, 0x2F, 0x00, 0x10, 0x45, 0x00,
 		0x05, 0x4A, 0x00, 0x00, 0x47, 0x2E, 0x00, 0x41, 0x66, 0x00, 0x00, 0x00, 0x05, 0x05, 0x05,
@@ -151,6 +176,72 @@ func NewPPU() *PPU {
 		0xB3, 0xEC, 0xFF, 0xDA, 0xAB, 0xEB, 0xFF, 0xA8, 0xF9, 0xFF, 0xAB, 0xB3, 0xFF, 0xD2, 0xB0,
 		0xFF, 0xEF, 0xA6, 0xFF, 0xF7, 0x9C, 0xD7, 0xE8, 0x95, 0xA6, 0xED, 0xAF, 0xA2, 0xF2, 0xDA,
 		0x99, 0xFF, 0xFC, 0xDD, 0xDD, 0xDD, 0x11, 0x11, 0x11, 0x11, 0x11, 0x11,
+	}*/
+	preset := []byte{
+		0x7C, 0x7C, 0x7C,
+		0x00, 0x00, 0xFC,
+		0x00, 0x00, 0xBC,
+		0x44, 0x28, 0xBC,
+		0x94, 0x00, 0x84,
+		0xA8, 0x00, 0x20,
+		0xA8, 0x10, 0x00,
+		0x88, 0x14, 0x00,
+		0x50, 0x30, 0x00,
+		0x00, 0x78, 0x00,
+		0x00, 0x68, 0x00,
+		0x00, 0x58, 0x00,
+		0x00, 0x40, 0x58,
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,
+		0xBC, 0xBC, 0xBC,
+		0x00, 0x78, 0xF8,
+		0x00, 0x58, 0xF8,
+		0x68, 0x44, 0xFC,
+		0xD8, 0x00, 0xCC,
+		0xE4, 0x00, 0x58,
+		0xF8, 0x38, 0x00,
+		0xE4, 0x5C, 0x10,
+		0xAC, 0x7C, 0x00,
+		0x00, 0xB8, 0x00,
+		0x00, 0xA8, 0x00,
+		0x00, 0xA8, 0x44,
+		0x00, 0x88, 0x88,
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,
+		0xF8, 0xF8, 0xF8,
+		0x3C, 0xBC, 0xFC,
+		0x68, 0x88, 0xFC,
+		0x98, 0x78, 0xF8,
+		0xF8, 0x78, 0xF8,
+		0xF8, 0x58, 0x98,
+		0xF8, 0x78, 0x58,
+		0xFC, 0xA0, 0x44,
+		0xF8, 0xB8, 0x00,
+		0xB8, 0xF8, 0x18,
+		0x58, 0xD8, 0x54,
+		0x58, 0xF8, 0x98,
+		0x00, 0xE8, 0xD8,
+		0x78, 0x78, 0x78,
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,
+		0xFC, 0xFC, 0xFC,
+		0xA4, 0xE4, 0xFC,
+		0xB8, 0xB8, 0xF8,
+		0xD8, 0xB8, 0xF8,
+		0xF8, 0xB8, 0xF8,
+		0xF8, 0xA4, 0xC0,
+		0xF0, 0xD0, 0xB0,
+		0xFC, 0xE0, 0xA8,
+		0xF8, 0xD8, 0x78,
+		0xD8, 0xF8, 0x78,
+		0xB8, 0xF8, 0xB8,
+		0xB8, 0xF8, 0xD8,
+		0x00, 0xFC, 0xFC,
+		0xF8, 0xD8, 0xF8,
+		0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00,
 	}
 
 	for i := byte(0); i <= 0x3F; i++ {
@@ -166,7 +257,7 @@ func NewPPU() *PPU {
 		nmi_output:    true,
 		nmi_occurred:  false,
 		nametable:     NAMETABLE_0,
-		cache:         map[int]TileCache{},
+		cache:         make([]TileCache, 0x3C0),
 	}
 }
 
@@ -181,15 +272,22 @@ func (p *PPU) StepPPU(cycles byte) bool {
 		p.scanlines++
 	}
 
+	if p.scanlines >= 8 && p.scanlines < 240 && p.scanlines%8 == 0 {
+		p.DrawBackgroundRow(p.scanlines/8 - 1)
+	}
+
 	// Before update we weren't in VB, but after we are
 	if p.scanlines == 241 {
 		// Generate NMI interrupt if enabled
 		//if p.nmi_occurred && p.nmi_output {
 		//	p.NMI_enabled = true
 		//}
+
 		p.nmi_occurred = true
-		//p.DrawBackground2(0) //TODO: this should be done gradually
+
 	}
+
+	p.MirrorMemory()
 
 	if p.scanlines >= 262 {
 		p.scanlines = 0
@@ -201,6 +299,14 @@ func (p *PPU) StepPPU(cycles byte) bool {
 	return false
 }
 
+func (p *PPU) MirrorMemory() {
+	// Palette Mirroring
+	PPURAM[0x3F10] = PPURAM[0x3F00]
+	PPURAM[0x3F14] = PPURAM[0x3F04]
+	PPURAM[0x3F18] = PPURAM[0x3F08]
+	PPURAM[0x3F1C] = PPURAM[0x3F0C]
+}
+
 func SetMemory(start uint16, data []byte) {
 	for i := range data {
 		PPURAM[start+uint16(i)] = data[i]
@@ -210,10 +316,11 @@ func SetMemory(start uint16, data []byte) {
 }
 
 // LoadPaletteV2 - starts scanning the PPURAM at the given address 16 bytes at a time
-//   to load a single 8x8 tile. Two bits are read that are 8 bytes apart at a time and used
-//   to index into the palette. p.pattern0 and p.pattern1 are byte arrays of the palette colour per pixel.
-//   All the writes are done sequentually in memory, tile by tile so fetching 64 bytes sequentially in pattern
-//   will correspond to a tile.
+//
+//	to load a single 8x8 tile. Two bits are read that are 8 bytes apart at a time and used
+//	to index into the palette. p.pattern0 and p.pattern1 are byte arrays of the palette colour per pixel.
+//	All the writes are done sequentually in memory, tile by tile so fetching 64 bytes sequentially in pattern
+//	will correspond to a tile.
 func (p *PPU) LoadPaletteV2(table uint16) {
 	pos := 0
 	palette := make([]byte, 256*256)

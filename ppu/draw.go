@@ -1,6 +1,8 @@
 package ppu
 
 import (
+	"fmt"
+	"github.com/hajimehoshi/ebiten/text"
 	"image"
 	"image/color"
 
@@ -24,6 +26,7 @@ func (p *PPU) DrawSprites2(background *ebiten.Image) {
 
 		if flipHorizontal {
 			op.GeoM.Scale(-1, 1)
+			op.GeoM.Translate(float64(8), 0)
 		}
 		if flipVertical {
 			op.GeoM.Scale(1, -1)
@@ -34,7 +37,7 @@ func (p *PPU) DrawSprites2(background *ebiten.Image) {
 
 		data := p.pattern0[tileIndex*64 : tileIndex*64+64]
 
-		paletteID := tileAttr & 0b0000_0011
+		paletteID := tileAttr & 0x03
 		palette := GetSpritePalette(paletteID)
 		img := image.NewPaletted(image.Rect(int(posX), int(posY), int(posX)+8, int(posY)+8), palette)
 
@@ -52,7 +55,10 @@ func DrawPalettes(background *ebiten.Image, startX, startY float64) {
 	for i := 0; i <= 3; i++ {
 		palette := GetSpritePalette(byte(i))
 		for x := range palette {
-			DrawSolidColour(background, palette[x], 32, startX+float64(x*32), startY+float64(i)*32)
+			drawX := startX + float64(x)*32
+			drawY := startY + float64(i)*32
+			DrawSolidColour(background, palette[x], 32, drawX, drawY)
+			text.Draw(background, fmt.Sprintf("%x", PPURAM[0x3F11+4*i+x]), Font, int(drawX)+16, int(drawY)+16, color.White)
 		}
 		palette = GetBackgroundPalette(byte(i))
 		for x := range palette {
@@ -104,21 +110,27 @@ func (p *PPU) DrawBackground(startPosX uint16) {
 	Image.DrawImage(p.patternTable1SpriteSheet, op)
 }
 
-// TODO: this should slowly draw image instead of all at once
-func (p *PPU) DrawBackground2(startPosX uint16) {
-	for i := 0; i < 0x3c0; i++ {
+func equalPalette(p1, p2 color.Palette) bool {
+	if (p1 == nil) != (p2 == nil) {
+		return false
+	}
+	for i := 0; i < 3; i++ {
+		if p1[i] != p2[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func (p *PPU) DrawBackgroundRow(startY int) {
+	for i := startY * 32; i < startY*32+32; i++ {
 		tileIndex := int(PPURAM[p.nametable+uint16(i)])
 		index := GetBackgroundPaletteID(i)
-
 		palette := GetBackgroundPalette(index)
 
 		// Only do update if the index AND palette have changed
-		if p.cache[i].NametableIndex == tileIndex && p.cache[i].Palette == index {
+		if p.cache[i].NametableIndex == tileIndex && equalPalette(p.cache[i].Palette, palette) {
 			continue
-		}
-		p.cache[i] = TileCache{
-			NametableIndex: tileIndex,
-			Palette:        index,
 		}
 
 		tileX := i % 32
@@ -139,7 +151,57 @@ func (p *PPU) DrawBackground2(startPosX uint16) {
 
 		imgio, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
 		p.cache[i] = TileCache{
-			NametableIndex: tileIndex, Palette: index, Tile: imgio,
+			NametableIndex: tileIndex, Palette: palette, Tile: imgio,
+		}
+
+		Image.DrawImage(imgio, op)
+	}
+	// PALETTE_0
+	/*op := &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(256+64, 0)
+	Image.DrawImage(p.patternTable0SpriteSheet, op)
+
+	// PALETTE_1
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(256+64), float64(128+32))
+	Image.DrawImage(p.patternTable1SpriteSheet, op)*/
+}
+
+// TODO: this should slowly draw image instead of all at once
+func (p *PPU) DrawBackground2(startPosX uint16) {
+	for i := 0; i < 0x3c0; i++ {
+		tileIndex := int(PPURAM[p.nametable+uint16(i)])
+		index := GetBackgroundPaletteID(i)
+		palette := GetBackgroundPalette(index)
+
+		// Only do update if the index AND palette have changed
+		if p.cache[i].NametableIndex == tileIndex && equalPalette(p.cache[i].Palette, palette) {
+			continue
+		}
+		/*p.cache[i] = TileCache{
+			NametableIndex: tileIndex,
+			Palette:        index,
+		}*/
+
+		tileX := i % 32
+		tileY := i / 32
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(float64(tileX*8), float64(tileY*8))
+
+		sx := (tileIndex % 32) * 8
+		sy := (tileIndex / 32) * 8
+
+		img := image.NewPaletted(image.Rect(int(sx), int(sy), int(sx)+8, int(sy)+8), palette)
+
+		data := p.pattern1[tileIndex*64 : tileIndex*64+64]
+
+		for j := 0; j < 64; j++ {
+			img.SetColorIndex((j%8)+sx, (j/8)+sy, data[j])
+		}
+
+		imgio, _ := ebiten.NewImageFromImage(img, ebiten.FilterDefault)
+		p.cache[i] = TileCache{
+			NametableIndex: tileIndex, Palette: palette, Tile: imgio,
 		}
 
 		Image.DrawImage(imgio, op)

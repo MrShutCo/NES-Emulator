@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"time"
 
 	"github.com/hajimehoshi/ebiten"
@@ -43,6 +44,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 			cpu.ButtonStatus &= ^byte(val)
 		}
 	}
+
 	//t := time.Now()
 	for cpu.Cycles < 29780 {
 		nes.Simulate()
@@ -52,7 +54,7 @@ func (g *Game) Update(screen *ebiten.Image) error {
 	cpu.Cycles -= 29780
 
 	//s := time.Now()
-	nes.PPU.DrawBackground2(0)
+	//
 	//a := time.Now()
 	//fmt.Printf("Time difference: %s\n", a.Sub(s).String())
 
@@ -68,8 +70,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	})
 
 	nes.PPU.DrawSprites2(screen)
-	ppu.DrawPalettes(screen, 32, 600)
+	ppu.DrawPalettes(screen, 500, 600)
+	for x := 0; x <= 0x0F; x++ {
+		for y := 0; y <= 0x03; y++ {
+			c := ppu.ColorMap[byte(y*0x10+x)]
+			ppu.DrawSolidColour(screen, c, 32, float64(x)*32, 600+float64(y)*32)
+		}
 
+	}
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("TPS: %0.2f", ebiten.CurrentTPS()))
 	ppu.DrawDebug(screen)
 }
@@ -86,8 +94,14 @@ func main() {
 }
 
 func NESGame() {
+	f, _ := os.Create(".cpuprofile.pprof")
+	defer f.Close()
+	if err := pprof.StartCPUProfile(f); err != nil {
+		panic(err)
+	}
+	defer pprof.StopCPUProfile()
+
 	game := &Game{}
-	// Specify the window size as you like. Here, a doubled size is specified.
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("NES Emulator")
 	ebiten.SetMaxTPS(60)
