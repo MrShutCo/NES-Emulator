@@ -16,6 +16,8 @@ var SP byte
 var PC uint16
 var Cycles uint64
 
+var OutputCommands = true
+
 type CPU6502 struct {
 	ram    []byte
 	x      byte
@@ -77,21 +79,26 @@ func Execute() string {
 
 	instruct := RAM[PC]
 
-	//start := fmt.Sprintf("%04X  %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
-	//middle := Instructions[RAM[PC]].String()
-	//regData := fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
+	var start, middle, regData, cycleData = "", "", "", ""
+	if OutputCommands {
+		start = fmt.Sprintf("%04X  %02X %02X %02x  ", PC, RAM[PC], RAM[PC+1], RAM[PC+2])
+		middle = Instructions[RAM[PC]].String()
+		regData = fmt.Sprintf("A:%02X X:%02X Y:%02X P:%02X SP:%02X", AC, X, Y, SR, SP)
 
-	//cycleData := fmt.Sprintf("CYC:%d", Cycles)
+		cycleData = fmt.Sprintf("CYC:%d", Cycles)
+	}
 	if FuncMap[instruct] != nil {
 		FuncMap[instruct]()
 	} else {
 		Instructions[instruct].Execute()
 	}
 
-	//a := start + middle + " " + output
+	a := start + middle + " " + output
 	output = ""
 	Cycles += uint64(Instructions[instruct].Cycles)
-	//return fmt.Sprintf("%-47v %v %v", a, regData, cycleData)
+	if OutputCommands {
+		return fmt.Sprintf("%-47v %v %v", a, regData, cycleData)
+	}
 	return ""
 }
 

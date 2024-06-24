@@ -1,5 +1,7 @@
 package cpu
 
+import "fmt"
+
 func STA() {
 	newInst(0x85, "STA", "zeropage", 3)
 	newInst(0x95, "STA", "zeropage,X", 4)
@@ -10,8 +12,10 @@ func STA() {
 	newInst(0x91, "STA", "(indirect),Y", 6)
 	a := []foo{
 		{0x85, func() {
-			//oldVal := RAM[RAM[PC+1]]
-			//output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], oldVal) // -1 since it was increased already
+			oldVal := RAM[RAM[PC+1]]
+			if OutputCommands {
+				output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], oldVal) // -1 since it was increased already
+			}
 			SetRAM(uint16(RAM[PC+1]), AC)
 			PC += 2
 		}},
@@ -22,7 +26,10 @@ func STA() {
 		}},
 		{0x8D, func() {
 			word := getNextWord()
-			//output = fmt.Sprintf("$%04X = %02X", word, RAM[word])
+			if OutputCommands {
+				output = fmt.Sprintf("$%04X = %02X", word, RAM[word])
+			}
+
 			SetRAM(word, AC)
 			PC += 3
 		}},

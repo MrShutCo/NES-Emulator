@@ -1,5 +1,7 @@
 package cpu
 
+import "fmt"
+
 // TODO: refactor the INC and DEC
 func Math() {
 	newInst(0xE6, "INC", "immediate", 5)
@@ -24,8 +26,9 @@ func Math() {
 		RAM[RAM[PC-1]]++
 		setZeroFlag(val == 0x00)
 		setNegativeFlag(val >= 0x80)
-		//////output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]]-1)
-		//PC += 2
+		if OutputCommands {
+			output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], RAM[RAM[PC+1]]-1)
+		}
 	}
 	// INC zeropage,X
 	FuncMap[0xF6] = func() {

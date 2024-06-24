@@ -3,6 +3,7 @@ package main
 import (
 	"6502/cpu"
 	"6502/ppu"
+	"fmt"
 )
 
 type NES struct {
@@ -21,7 +22,10 @@ func (n *NES) Simulate() {
 		n.interrupt()
 	}
 	oldCycles := cpu.Cycles
-	cpu.Execute()
+	output := cpu.Execute()
+	if cpu.OutputCommands {
+		fmt.Println(output)
+	}
 	cycleDiff := cpu.Cycles - oldCycles
 	doneDrawing1 := n.PPU.StepPPU(byte(cycleDiff * 3))
 	if doneDrawing1 {

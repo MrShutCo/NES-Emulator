@@ -1,7 +1,6 @@
 package ppu
 
 import (
-	"fmt"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten"
@@ -9,8 +8,6 @@ import (
 
 var PPURAM [0x4000]byte
 var OAM [0x100]byte
-
-//var ppuCycles uint64
 
 var _PPUCONTROL byte
 var _PPUMASK byte
@@ -35,73 +32,14 @@ var DataStruct *PPU
 
 var ColorList []color.RGBA
 
-func GetImageFromPatternTable(val byte, bank uint16) []byte {
-	start := bank + uint16(val)*16 // Get the image in question
-	return PPURAM[start : start+16]
-}
-
-func GetSpritePalette(paletteID byte) color.Palette {
-	addr := 0x3F11 + 4*uint16(paletteID)
-	paletteData := PPURAM[addr : addr+3]
-	return color.Palette{
-		color.Transparent, ColorList[paletteData[0]&0b00111111],
-		ColorList[paletteData[1]&0b00111111], ColorList[paletteData[2]&0b00111111],
-	}
-}
-
-func GetBackgroundPalette(paletteID byte) color.Palette {
-	addr := 0x3F01 + 4*uint16(paletteID)
-	paletteData := PPURAM[addr : addr+3]
-	return color.Palette{
-<<<<<<< HEAD
-		ColorMap[PPURAM[0x3F00]&0b00111111], ColorMap[paletteData[0]&0b00111111],
-		ColorMap[paletteData[1]&0b00111111], ColorMap[paletteData[2]&0b00111111],
-=======
-		ColorList[PPURAM[0x3F00]&0b00111111], ColorList[paletteData[0]&0b00111111],
-		ColorList[paletteData[1]&0b00111111], ColorList[paletteData[2]&0b00111111],
->>>>>>> lots-of-changes
-	}
-}
-
-func GetBackgroundPaletteID(tileIndex int) byte {
-	x := (tileIndex % 32) / 4
-	y := (tileIndex / 32) / 4
-	address := 0x23C0 + x + 8*y
-	attributeByte := PPURAM[address]
-
-	// Now we need to figure out what quadrant we are in
-	cellX := (tileIndex % 32) % 4
-	cellY := (tileIndex / 32) % 4
-
-	if cellX < 2 && cellY < 2 {
-		return attributeByte & 0x03
-	}
-	if cellX >= 2 && cellY < 2 {
-		return (attributeByte >> 2) & 0x03
-	}
-	if cellX < 2 && cellY >= 2 {
-		return (attributeByte >> 4) & 0x03
-	}
-	return (attributeByte >> 6) & 0x03
-}
-
-func getAttrByteFromTileIndex(tileIndex int) byte {
-	// position of the 32x32 block
-	tileX := tileIndex % 32
-	tileY := tileIndex / 32
-	attrX := tileX / 8
-	attrY := (tileY / 8)
-	return byte(attrX) + byte(attrY)*8
-}
-
-func get2BitsFromByte(data byte, bit byte) byte {
-	return data & (0x3 << bit) >> bit
-}
-
 type TileCache struct {
 	NametableIndex int
-	Palette        color.Palette
-	Tile           *ebiten.Image
+	Color1         color.RGBA
+	Color2         color.RGBA
+	Color3         color.RGBA
+	Color4         color.RGBA
+
+	Tile *ebiten.Image
 }
 
 type PPU struct {
@@ -111,18 +49,23 @@ type PPU struct {
 	scanlines   int
 	isEvenFrame bool
 
-	nametable              uint16
-	vramIncrement          byte
-	spritePatternTable     uint16
-	backgroundPatternTable uint16
-	is8x8Sprites           bool
-	nmi_occurred           bool
-	nmi_output             bool
+	nametable            uint16
+	vramIncrement        byte
+	spritePatternTable   uint16
+	backgroundUsesTable0 bool
+	is8x8Sprites         bool
+	nmi_occurred         bool
+	nmi_output           bool
 
 	patternTable0SpriteSheet *ebiten.Image
 	patternTable1SpriteSheet *ebiten.Image
 
+	sprites []*ebiten.Image
+	tiles   []*ebiten.Image
+
 	cache []TileCache
+
+	hasSprite0ThisFrame bool
 
 	// New logic to support colour
 	// Contains the palette indexes of all background sprites
@@ -131,11 +74,6 @@ type PPU struct {
 }
 
 func NewPPU() *PPU {
-<<<<<<< HEAD
-	ColorMap = map[byte]color.RGBA{}
-=======
-
->>>>>>> lots-of-changes
 	/*preset := []byte{
 		0x80, 0x80, 0x80, 0x00, 0x3D, 0xA6, 0x00, 0x12, 0xB0, 0x44, 0x00, 0x96, 0xA1, 0x00, 0x5E,
 		0xC7, 0x00, 0x28, 0xBA, 0x06, 0x00, 0x8C, 0x17, 0x00, 0x5C, 0x2F, 0x00, 0x10, 0x45, 0x00,
@@ -223,7 +161,17 @@ func NewPPU() *PPU {
 		pi := i * 3
 		ColorList[i] = color.RGBA{preset[pi], preset[pi+1], preset[pi+2], 255}
 	}
-	//cache = make(map[uint16]*ebiten.Image)
+
+	sprites := make([]*ebiten.Image, 64)
+	for i := range sprites {
+		img, _ := ebiten.NewImage(8, 8, ebiten.FilterDefault)
+		sprites[i] = img
+	}
+	tiles := make([]*ebiten.Image, 32*30)
+	for i := range tiles {
+		img, _ := ebiten.NewImage(8, 8, ebiten.FilterDefault)
+		tiles[i] = img
+	}
 
 	return &PPU{
 		vramIncrement: 1,
@@ -231,6 +179,8 @@ func NewPPU() *PPU {
 		isEvenFrame:   true,
 		nmi_output:    true,
 		nmi_occurred:  false,
+		sprites:       sprites,
+		tiles:         tiles,
 		nametable:     NAMETABLE_0,
 		cache:         make([]TileCache, 0x3C0),
 	}
@@ -247,6 +197,11 @@ func (p *PPU) StepPPU(cycles byte) bool {
 		p.scanlines++
 	}
 
+	if p.scanlines == -1 {
+		p.hasSprite0ThisFrame = false
+		_PPUSTATUS = ClearBit(_PPUSTATUS, 6) // Clear sprite 0
+	}
+
 	if p.scanlines >= 8 && p.scanlines < 240 && p.scanlines%8 == 0 {
 		p.DrawBackgroundRow(p.scanlines/8 - 1)
 	}
@@ -257,7 +212,7 @@ func (p *PPU) StepPPU(cycles byte) bool {
 		//if p.nmi_occurred && p.nmi_output {
 		//	p.NMI_enabled = true
 		//}
-
+		_PPUSTATUS = SetBit(_PPUSTATUS, 7)
 		p.nmi_occurred = true
 
 	}
@@ -280,14 +235,6 @@ func (p *PPU) MirrorMemory() {
 	PPURAM[0x3F14] = PPURAM[0x3F04]
 	PPURAM[0x3F18] = PPURAM[0x3F08]
 	PPURAM[0x3F1C] = PPURAM[0x3F0C]
-}
-
-func SetMemory(start uint16, data []byte) {
-	for i := range data {
-		PPURAM[start+uint16(i)] = data[i]
-	}
-	fmt.Printf("Length of data: %04X\n", len(data))
-	fmt.Printf("%04X\n", start)
 }
 
 // LoadPaletteV2 - starts scanning the PPURAM at the given address 16 bytes at a time
@@ -377,7 +324,8 @@ func (p *PPU) ppuctrl(data byte) {
 
 	// 0: $0000, 1: $1000, ignored in 8x16 mode
 	backgroundPatternTable := (data & 0x10) >> 4
-	p.backgroundPatternTable = 0x1000 * uint16(backgroundPatternTable)
+	//p.backgroundUsesTable0 = 0x1000 * uint16(backgroundPatternTable)
+	p.backgroundUsesTable0 = backgroundPatternTable == 0
 
 	// 0: 8x8 pixels, 1: 8x16 pixels
 	spriteSize := (data & 0x20) >> 5
@@ -401,8 +349,6 @@ func (b *PPU) WriteBus(cpuAddr uint16, data byte) {
 	switch cpuAddr {
 	case 0x2000:
 		b.ppuctrl(data)
-	case 0x2005:
-
 	case 0x2006:
 		_PPUADDR = _PPUADDR << 8           // Shift lo -> high
 		_PPUADDR = _PPUADDR & 0xFF00       // Set lo = 0
@@ -417,16 +363,23 @@ func (b *PPU) WriteBus(cpuAddr uint16, data byte) {
 func (b *PPU) ReadBus(cpuAddr uint16) byte {
 	switch cpuAddr {
 	case 0x2002:
-		return b.ppustatus()
+		b.ppustatus()
+		return _PPUSTATUS
+	case 0x2007:
+		oldSTATUS := _PPUDATA
+		_PPUDATA = PPURAM[0x2007]
+		return oldSTATUS
 	}
 	return b.latch
 }
 
-func (p *PPU) ppustatus() byte {
+func (p *PPU) ppustatus() {
 	_PPUADDR = 0x0
+
+	if p.scanlines == 0 {
+		_PPUSTATUS = ClearBit(_PPUSTATUS, 7)
+	}
 	if p.nmi_occurred {
 		p.nmi_occurred = false
-		return 0xC0 //TODO: race condition
 	}
-	return 0b11000000
 }

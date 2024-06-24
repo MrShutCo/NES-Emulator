@@ -69,6 +69,10 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		GeoM: ebiten.ScaleGeo(2, 2),
 	})
 
+	screen.DrawImage(ppu.Background, &ebiten.DrawImageOptions{
+		GeoM: ebiten.ScaleGeo(2, 2),
+	})
+
 	nes.PPU.DrawSprites2(screen)
 	ppu.DrawPalettes(screen, 32, 600)
 
@@ -103,8 +107,8 @@ func NESGame() {
 	cpu.Reset()
 	cpu.LoadMaps()
 	//cpu.Load("nes-te/st-roms/tutor/tutor.nes")
-	//cpu.Load("nes-test-roms/branch_timing_tests/1.Branch_Basics.nes")
-	cpu.Load("nes_test/smb.nes")
+	cpu.Load("nes-test-roms/sprite_hit_tests_2005.10.05/01.basics.nes")
+	//cpu.Load("nes_test/smb.nes")
 	//cpu.Load("nes_test/donkeykong.nes")
 	//cpu.Load("../nes-test-roms/cpu_dummy_reads/vbl_nmi_timing/7.nmi_timing.nes")
 	cpu.Start()
@@ -115,7 +119,9 @@ func NESGame() {
 	ppu.DataStruct.LoadPaletteV2(ppu.PATTERN_TABLE_1)
 	cpu.PC = cpu.GetWordAt(cpu.RES_VECTOR)
 	Image, _ := ebiten.NewImage(512, 512, ebiten.FilterDefault)
+	Background, _ := ebiten.NewImage(256, 240, ebiten.FilterDefault)
 	ppu.Image = Image
+	ppu.Background = Background
 	nes = NES{
 		PPU: ppu.DataStruct,
 	}
@@ -126,7 +132,7 @@ func NESGame() {
 		panic(err)
 	}
 	ppu.Font, err = opentype.NewFace(tt, &opentype.FaceOptions{
-		Size:    12,
+		Size:    10,
 		DPI:     72,
 		Hinting: font.HintingFull,
 	})
@@ -187,14 +193,14 @@ func ExecuteNESTest() {
 	for i := 0; i < 10000; i++ {
 		start := time.Now()
 		for cpu.Cycles < 29780 {
-			cpu.Execute()
+			output := cpu.Execute()
+			f.Write([]byte(output + "\n"))
+			fmt.Print(output)
 		}
 		end := time.Now()
 		fmt.Printf("Time difference: %s\n", end.Sub(start).String())
 		cpu.Cycles -= 29780
-		//fmt.Fscanln(os.Stdin)
-		//f.Write([]byte(output + "\n"))
-		//fmt.Print(output)
+
 		//fmt.Println(cpu.RAM[0x2000:0x2100])
 	}
 }

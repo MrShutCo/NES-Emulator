@@ -1,6 +1,7 @@
 package cpu
 
 import (
+	"fmt"
 	"reflect"
 	"runtime"
 )
@@ -132,7 +133,9 @@ func ac() byte {
 
 func immed() byte {
 	val := GetRAM(PC + 1)
-	//output = fmt.Sprintf("#$%02X", RAM[PC+1])
+	if OutputCommands {
+		output = fmt.Sprintf("#$%02X", RAM[PC+1])
+	}
 	PC += 2
 	return val
 }
@@ -146,7 +149,9 @@ func zeropage() byte {
 
 func zeropageAddr() uint16 {
 	addr := uint16(GetRAM(PC + 1))
-	//output = fmt.Sprintf("$%02X = %02X", addr, RAM[addr])
+	if OutputCommands {
+		output = fmt.Sprintf("$%02X = %02X", addr, RAM[addr])
+	}
 	return addr
 }
 
@@ -158,7 +163,9 @@ func zeropageX() byte {
 
 func zeropageXAddr() uint16 {
 	addr := byte(GetRAM(PC+1)) + X
-	//output = fmt.Sprintf("$%02X,X @ %02X = %02X", GetRAM(PC+1), addr, GetRAM(uint16(addr)))
+	if OutputCommands {
+		output = fmt.Sprintf("$%02X,X @ %02X = %02X", GetRAM(PC+1), addr, GetRAM(uint16(addr)))
+	}
 	return uint16(addr)
 }
 
@@ -170,7 +177,10 @@ func zeropageY() byte {
 
 func zeropageYAddr() uint16 {
 	addr := byte(GetRAM(PC+1)) + Y
-	//output = fmt.Sprintf("$%02X,Y @ %02X = %02X", GetRAM(PC+1), addr, GetRAM(uint16(addr)))
+	if OutputCommands {
+		output = fmt.Sprintf("$%02X,Y @ %02X = %02X", GetRAM(PC+1), addr, GetRAM(uint16(addr)))
+	}
+
 	return uint16(addr)
 }
 
@@ -183,7 +193,9 @@ func absolute() byte {
 
 func absoluteAddr() uint16 {
 	addr := getNextWord()
-	//output = fmt.Sprintf("$%04X = %02X", addr, RAM[addr])
+	if OutputCommands {
+		output = fmt.Sprintf("$%04X = %02X", addr, RAM[addr])
+	}
 	return addr
 }
 
@@ -194,14 +206,18 @@ func absoluteX() byte {
 		Cycles++
 	}
 	PC += 3
-	////output = fmt.Sprintf("$%04X = %02X", addrX, RAM[addrX])
+	if OutputCommands {
+		output = fmt.Sprintf("$%04X = %02X", addrX, RAM[addrX])
+	}
 	val := GetRAM(addrX)
 	return val
 }
 
 func absoluteXAddr() uint16 {
 	addrX := bytesToInt16(GetRAM(PC+2), GetRAM(PC+1)) + uint16(X)
-	//output = fmt.Sprintf("$%04X,X @ %04X = %02X", getNextWord(), addrX, RAM[addrX])
+	if OutputCommands {
+		output = fmt.Sprintf("$%04X,X @ %04X = %02X", getNextWord(), addrX, RAM[addrX])
+	}
 	return addrX
 }
 
@@ -218,7 +234,9 @@ func absoluteY() byte {
 
 func absoluteYAddr() uint16 {
 	addrY := bytesToInt16(GetRAM(PC+2), GetRAM(PC+1)) + uint16(Y)
-	////output = fmt.Sprintf("$%04X,Y @ %04X = %02X", getNextWord(), addrY, RAM[addrY])
+	if OutputCommands {
+		output = fmt.Sprintf("$%04X,Y @ %04X = %02X", getNextWord(), addrY, RAM[addrY])
+	}
 	return addrY
 }
 
@@ -227,7 +245,10 @@ func indirectX16() uint16 {
 	low := GetRAM(zeropageAddr % 256)
 	hi := GetRAM((zeropageAddr + 1) % 256) // Wraparound
 	addr := bytesToInt16(hi, low)
-	////output = fmt.Sprintf("($%02X,X) @ %02X = %04X = %02X", RAM[PC+1], RAM[PC+1]+X, addr, RAM[addr])
+	if OutputCommands {
+		output = fmt.Sprintf("($%02X,X) @ %02X = %04X = %02X", RAM[PC+1], RAM[PC+1]+X, addr, RAM[addr])
+	}
+
 	return addr
 }
 
@@ -249,7 +270,9 @@ func indirectYAddr() uint16 {
 		Cycles++
 	}
 
-	//output = fmt.Sprintf("($%02X),Y = %04X @ %04X = %02X", RAM[PC+1], addr, addrY, RAM[uint16(addrY)])
+	if OutputCommands {
+		output = fmt.Sprintf("($%02X),Y = %04X @ %04X = %02X", RAM[PC+1], addr, addrY, RAM[uint16(addrY)])
+	}
 	return uint16(addrY)
 }
 

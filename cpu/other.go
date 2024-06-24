@@ -1,5 +1,7 @@
 package cpu
 
+import "fmt"
+
 func NMI_Interrupt() {
 	push(highByte(PC))
 	push(lowByte(PC))
@@ -16,7 +18,9 @@ func JMP() {
 	// JMP absolute
 	FuncMap[0x4C] = func() {
 		PC = bytesToInt16(RAM[PC+2], RAM[PC+1])
-		//output = fmt.Sprintf("$%04X", PC)
+		if OutputCommands {
+			output = fmt.Sprintf("$%04X", PC)
+		}
 	}
 	// JMP indirect
 	// TODO: finish
@@ -27,7 +31,9 @@ func JMP() {
 		hiLowByte := lowByte(lowAddr) + 1
 		hiAddr := hihiByte | int16(hiLowByte) // keep page, mod 256 low bytes
 		hi := RAM[hiAddr]
-		//output = fmt.Sprintf("($%04X) = %04X", lowAddr, bytesToInt16(hi, low))
+		if OutputCommands {
+			output = fmt.Sprintf("($%04X) = %04X", lowAddr, bytesToInt16(hi, low))
+		}
 		PC = bytesToInt16(hi, low)
 	}
 	// JSR
@@ -35,7 +41,9 @@ func JMP() {
 		push(highByte(PC + 2))
 		push(lowByte(PC + 2))
 		PC = bytesToInt16(RAM[PC+2], RAM[PC+1])
-		//output = fmt.Sprintf("$%04X", PC)
+		if OutputCommands {
+			output = fmt.Sprintf("$%04X", PC)
+		}
 	}
 	// RTS
 	FuncMap[0x60] = func() {
@@ -80,7 +88,9 @@ func Other() {
 		setNegativeFlag(getBit(val, 7))
 		setOverflowFlag(getBit(val, 6))
 		setZeroFlag(AC&val == 0)
-		//output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], val)
+		if OutputCommands {
+			output = fmt.Sprintf("$%02X = %02X", RAM[PC+1], val)
+		}
 		PC += 2
 	}
 	// BIT absolute
@@ -89,7 +99,9 @@ func Other() {
 		setNegativeFlag(getBit(val, 7))
 		setOverflowFlag(getBit(val, 6))
 		setZeroFlag(AC&val == 0)
-		//output = fmt.Sprintf("$%04X = %02X", getNextWord(), val)
+		if OutputCommands {
+			output = fmt.Sprintf("$%04X = %02X", getNextWord(), val)
+		}
 		PC += 3
 	}
 
