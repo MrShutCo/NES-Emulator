@@ -11,10 +11,10 @@ func NMI_Interrupt() {
 }
 
 func JMP() {
-	newInst(0x4C, "JMP", "absolute", 3)
-	newInst(0x6C, "JMP", "indirect", 5)
-	newInst(0x20, "JSR", "", 6)
-	newInst(0x60, "RTS", "", 6)
+	newInst(0x4C, "JMP", "absolute", 3, 3)
+	newInst(0x6C, "JMP", "indirect", 5, 3)
+	newInst(0x20, "JSR", "absolute", 6, 3)
+	newInst(0x60, "RTS", "", 6, 1)
 	// JMP absolute
 	FuncMap[0x4C] = func() {
 		PC = bytesToInt16(RAM[PC+2], RAM[PC+1])
@@ -56,11 +56,11 @@ func JMP() {
 }
 
 func Other() {
-	newInst(0x00, "BRK", "implied", 7)
-	newInst(0x40, "RTI", "implied", 6)
-	newInst(0x24, "BIT", "zeropage", 3)
-	newInst(0x2C, "BIT", "absolute", 4)
-	newInst(0xEA, "NOP", "implied", 2)
+	newInst(0x00, "BRK", "implied", 7, 1)
+	newInst(0x40, "RTI", "implied", 6, 1)
+	newInst(0x24, "BIT", "zeropage", 3, 2)
+	newInst(0x2C, "BIT", "absolute", 4, 3)
+	newInst(0xEA, "NOP", "implied", 2, 1)
 	// BRK
 	FuncMap[0x00] = func() {
 		retAddr := PC + 2

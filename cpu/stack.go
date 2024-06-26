@@ -1,10 +1,10 @@
 package cpu
 
 func Stack() {
-	newInst(0x48, "PHA", "", 3)
-	newInst(0x08, "PHP", "", 3)
-	newInst(0x68, "PLA", "", 4)
-	newInst(0x28, "PLP", "", 4)
+	newInst(0x48, "PHA", "", 3, 1)
+	newInst(0x08, "PHP", "", 3, 1)
+	newInst(0x68, "PLA", "", 4, 1)
+	newInst(0x28, "PLP", "", 4, 1)
 	// PHA
 	FuncMap[0x48] = func() {
 		push(AC)

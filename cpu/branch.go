@@ -4,14 +4,14 @@ import "fmt"
 
 func Branch() {
 	// TODO: fix paging for cycles
-	newInst(0x90, "BCC", "", 2)
-	newInst(0xB0, "BCS", "", 2)
-	newInst(0xF0, "BEQ", "", 2)
-	newInst(0x30, "BMI", "", 2)
-	newInst(0xD0, "BNE", "", 2)
-	newInst(0x10, "BPL", "", 2)
-	newInst(0x50, "BVC", "", 2)
-	newInst(0x70, "BVS", "", 2)
+	newInst(0x90, "BCC", "", 2, 2)
+	newInst(0xB0, "BCS", "", 2, 2)
+	newInst(0xF0, "BEQ", "", 2, 2)
+	newInst(0x30, "BMI", "", 2, 2)
+	newInst(0xD0, "BNE", "", 2, 2)
+	newInst(0x10, "BPL", "", 2, 2)
+	newInst(0x50, "BVC", "", 2, 2)
+	newInst(0x70, "BVS", "", 2, 2)
 	// BCC
 	FuncMap[0x90] = func() {
 		val := addsignedByteToUInt(RAM[PC+1], PC)
