@@ -16,7 +16,7 @@ var SP byte
 var PC uint16
 var Cycles uint64
 
-var OutputCommands = true
+var OutputCommands = false
 
 type CPU6502 struct {
 	ram    []byte
@@ -52,18 +52,19 @@ type Instruction struct {
 	AddressingMode string
 	Cycles         uint8
 	Execute        func()
+	ByteCount      uint8
 }
 
 func (i Instruction) String() string {
 	return i.Name
 }
 
-func newInst(opcode byte, name, mode string, cycles uint8) {
-	Instructions[opcode] = Instruction{Name: name, AddressingMode: mode, Cycles: cycles}
+func newInst(opcode byte, name, mode string, cycles uint8, byteCount uint8) {
+	Instructions[opcode] = Instruction{Name: name, AddressingMode: mode, Cycles: cycles, ByteCount: byteCount}
 }
 
-func NewInst(opcode byte, name, mode string, cycles uint8, execute func()) {
-	Instructions[opcode] = Instruction{Name: name, AddressingMode: mode, Cycles: cycles, Execute: execute}
+func NewInst(opcode byte, name, mode string, cycles uint8, execute func(), byteCount uint8) {
+	Instructions[opcode] = Instruction{Name: name, AddressingMode: mode, Cycles: cycles, Execute: execute, ByteCount: byteCount}
 }
 
 func Execute() string {
@@ -130,6 +131,10 @@ func SetRAM(addr uint16, data byte) {
 	}
 }
 
+func GetInstructionAt(addr uint16) Instruction {
+	return Instructions[RAM[addr]]
+}
+
 func GetRAM(addr uint16) byte {
 	switch addr {
 	case 0x2002:
@@ -161,6 +166,12 @@ func Load(file string) {
 	//fmt.Printf("%s", err)
 	//}
 	//defer f.Close()
+	/*type Mapper struct {
+		PRGRomSize int
+		PRGRomBank
+	}
+
+	mappers := map[byte]Struct{}*/
 
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {

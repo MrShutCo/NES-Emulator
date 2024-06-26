@@ -4,12 +4,12 @@ import "fmt"
 
 // TODO: refactor the INC and DEC
 func Math() {
-	newInst(0xE6, "INC", "immediate", 5)
-	newInst(0xF6, "INC", "zeropage", 6)
-	newInst(0xEE, "INC", "absolute", 6)
-	newInst(0xFE, "INC", "absolute,X", 7)
-	newInst(0xE8, "INX", "implied", 2)
-	newInst(0xC8, "INY", "implied", 2)
+	newInst(0xE6, "INC", "immediate", 5, 2)
+	newInst(0xF6, "INC", "zeropage", 6, 2)
+	newInst(0xEE, "INC", "absolute", 6, 3)
+	newInst(0xFE, "INC", "absolute,X", 7, 3)
+	newInst(0xE8, "INX", "implied", 2, 1)
+	newInst(0xC8, "INY", "implied", 2, 1)
 	// INX
 	FuncMap[0xE8] = func() {
 		SetX(X + 1)
@@ -52,12 +52,12 @@ func Math() {
 		setNegativeFlag(val >= 0x80)
 	}
 
-	newInst(0xCA, "DEX", "immediate", 2)
-	newInst(0x88, "DEY", "zeropage", 2)
-	newInst(0xC6, "DEC", "absolute", 5)
-	newInst(0xD6, "DEC", "absolute,X", 6)
-	newInst(0xCE, "DEC", "implied", 6)
-	newInst(0xDE, "DEC", "implied", 7)
+	newInst(0xCA, "DEX", "immediate", 2, 1)
+	newInst(0x88, "DEY", "zeropage", 2, 1)
+	newInst(0xC6, "DEC", "absolute", 5, 2)
+	newInst(0xD6, "DEC", "absolute,X", 6, 2)
+	newInst(0xCE, "DEC", "implied", 6, 3)
+	newInst(0xDE, "DEC", "implied", 7, 3)
 	// DEX
 	FuncMap[0xCA] = func() {
 		SetX(X - 1)
@@ -98,14 +98,14 @@ func Math() {
 		setNegativeFlag(val >= 0x80)
 	}
 
-	newInst(0x69, "ADC", "immediate", 2)
-	newInst(0x65, "ADC", "zeropage", 3)
-	newInst(0x75, "ADC", "zeropage,X", 4)
-	newInst(0x6D, "ADC", "absolute", 4)
-	newInst(0x7D, "ADC", "absolute,X", 4)
-	newInst(0x79, "ADC", "absolute,Y", 4)
-	newInst(0x61, "ADC", "(indirect,X)", 6)
-	newInst(0x71, "ADC", "(indirect),Y", 5)
+	newInst(0x69, "ADC", "immediate", 2, 2)
+	newInst(0x65, "ADC", "zeropage", 3, 2)
+	newInst(0x75, "ADC", "zeropage,X", 4, 2)
+	newInst(0x6D, "ADC", "absolute", 4, 3)
+	newInst(0x7D, "ADC", "absolute,X", 4, 3)
+	newInst(0x79, "ADC", "absolute,Y", 4, 3)
+	newInst(0x61, "ADC", "(indirect,X)", 6, 2)
+	newInst(0x71, "ADC", "(indirect),Y", 5, 2)
 
 	ad := []foo{
 		{0x69, func() { adc(immed) }},
@@ -119,14 +119,14 @@ func Math() {
 	}
 	apply(ad)
 
-	newInst(0xE9, "SBC", "immediate", 2)
-	newInst(0xE5, "SBC", "zeropage", 3)
-	newInst(0xF5, "SBC", "zeropage,X", 4)
-	newInst(0xED, "SBC", "absolute", 4)
-	newInst(0xFD, "SBC", "absolute,X", 4)
-	newInst(0xF9, "SBC", "absolute,Y", 4)
-	newInst(0xE1, "SBC", "(indirect,X)", 6)
-	newInst(0xF1, "SBC", "(indirect),Y", 5)
+	newInst(0xE9, "SBC", "immediate", 2, 2)
+	newInst(0xE5, "SBC", "zeropage", 3, 2)
+	newInst(0xF5, "SBC", "zeropage,X", 4, 2)
+	newInst(0xED, "SBC", "absolute", 4, 3)
+	newInst(0xFD, "SBC", "absolute,X", 4, 3)
+	newInst(0xF9, "SBC", "absolute,Y", 4, 3)
+	newInst(0xE1, "SBC", "(indirect,X)", 6, 2)
+	newInst(0xF1, "SBC", "(indirect),Y", 5, 2)
 	sub := []foo{
 		{0xE9, func() { sbc(immed) }},
 		{0xE5, func() { sbc(zeropage) }},

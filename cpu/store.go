@@ -3,13 +3,13 @@ package cpu
 import "fmt"
 
 func STA() {
-	newInst(0x85, "STA", "zeropage", 3)
-	newInst(0x95, "STA", "zeropage,X", 4)
-	newInst(0x8D, "STA", "absolute", 4)
-	newInst(0x9D, "STA", "absolute,X", 5)
-	newInst(0x99, "STA", "absolute,Y", 5)
-	newInst(0x81, "STA", "(indirect,X)", 6)
-	newInst(0x91, "STA", "(indirect),Y", 6)
+	newInst(0x85, "STA", "zeropage", 3, 2)
+	newInst(0x95, "STA", "zeropage,X", 4, 2)
+	newInst(0x8D, "STA", "absolute", 4, 3)
+	newInst(0x9D, "STA", "absolute,X", 5, 3)
+	newInst(0x99, "STA", "absolute,Y", 5, 3)
+	newInst(0x81, "STA", "(indirect,X)", 6, 2)
+	newInst(0x91, "STA", "(indirect),Y", 6, 2)
 	a := []foo{
 		{0x85, func() {
 			oldVal := RAM[RAM[PC+1]]
@@ -58,9 +58,9 @@ func STA() {
 }
 
 func STX() {
-	newInst(0x86, "STX", "zeropage", 3)
-	newInst(0x96, "STX", "zeropage,Y", 4)
-	newInst(0x8E, "STX", "absolute", 4)
+	newInst(0x86, "STX", "zeropage", 3, 2)
+	newInst(0x96, "STX", "zeropage,Y", 4, 2)
+	newInst(0x8E, "STX", "absolute", 4, 3)
 
 	// STX zeropage
 	FuncMap[0x86] = func() {
@@ -83,9 +83,9 @@ func STX() {
 }
 
 func STY() {
-	newInst(0x84, "STY", "zeropage", 3)
-	newInst(0x94, "STY", "zeropage,X", 4)
-	newInst(0x8C, "STY", "absolute", 4)
+	newInst(0x84, "STY", "zeropage", 3, 2)
+	newInst(0x94, "STY", "zeropage,X", 4, 2)
+	newInst(0x8C, "STY", "absolute", 4, 3)
 	// STY zeropage
 	FuncMap[0x84] = func() {
 		addr := zeropageAddr()

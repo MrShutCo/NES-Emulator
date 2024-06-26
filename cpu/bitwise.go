@@ -6,14 +6,14 @@ type foo struct {
 }
 
 func Bitwise() {
-	newInst(0x29, "AND", "immediate", 2)
-	newInst(0x25, "AND", "zeropage", 3)
-	newInst(0x35, "AND", "zeropage,X", 4)
-	newInst(0x2D, "AND", "absolute", 4)
-	newInst(0x3D, "AND", "absolute,X", 4)
-	newInst(0x39, "AND", "absolute,Y", 4)
-	newInst(0x21, "AND", "(indirect,X)", 6)
-	newInst(0x31, "AND", "(indirect),Y", 5)
+	newInst(0x29, "AND", "immediate", 2, 2)
+	newInst(0x25, "AND", "zeropage", 3, 2)
+	newInst(0x35, "AND", "zeropage,X", 4, 2)
+	newInst(0x2D, "AND", "absolute", 4, 3)
+	newInst(0x3D, "AND", "absolute,X", 4, 3)
+	newInst(0x39, "AND", "absolute,Y", 4, 3)
+	newInst(0x21, "AND", "(indirect,X)", 6, 2)
+	newInst(0x31, "AND", "(indirect),Y", 5, 2)
 	a := []foo{
 		{0x29, func() { and(immed) }},
 		{0x25, func() { and(zeropage) }},
@@ -26,14 +26,14 @@ func Bitwise() {
 	}
 	apply(a)
 
-	newInst(0x09, "ORA", "immediate", 2)
-	newInst(0x05, "ORA", "zeropage", 3)
-	newInst(0x15, "ORA", "zeropage,X", 4)
-	newInst(0x0D, "ORA", "absolute", 4)
-	newInst(0x1D, "ORA", "absolute,X", 4)
-	newInst(0x19, "ORA", "absolute,Y", 4)
-	newInst(0x01, "ORA", "indirect,X", 6)
-	newInst(0x11, "ORA", "(indirect),Y", 5)
+	newInst(0x09, "ORA", "immediate", 2, 2)
+	newInst(0x05, "ORA", "zeropage", 3, 2)
+	newInst(0x15, "ORA", "zeropage,X", 4, 2)
+	newInst(0x0D, "ORA", "absolute", 4, 2)
+	newInst(0x1D, "ORA", "absolute,X", 4, 3)
+	newInst(0x19, "ORA", "absolute,Y", 4, 3)
+	newInst(0x01, "ORA", "indirect,X", 6, 2)
+	newInst(0x11, "ORA", "(indirect),Y", 5, 2)
 	e := []foo{
 		{0x09, func() { ora(immed) }},
 		{0x05, func() { ora(zeropage) }},
@@ -46,14 +46,14 @@ func Bitwise() {
 	}
 	apply(e)
 
-	newInst(0x49, "EOR", "immediate", 2)
-	newInst(0x45, "EOR", "zeropage", 3)
-	newInst(0x55, "EOR", "zeropage,X", 4)
-	newInst(0x4D, "EOR", "absolute", 4)
-	newInst(0x5D, "EOR", "absolute,X", 4)
-	newInst(0x59, "EOR", "absolute,Y", 4)
-	newInst(0x41, "EOR", "indirect,X", 6)
-	newInst(0x51, "EOR", "indirect,Y", 5)
+	newInst(0x49, "EOR", "immediate", 2, 2)
+	newInst(0x45, "EOR", "zeropage", 3, 2)
+	newInst(0x55, "EOR", "zeropage,X", 4, 2)
+	newInst(0x4D, "EOR", "absolute", 4, 3)
+	newInst(0x5D, "EOR", "absolute,X", 4, 3)
+	newInst(0x59, "EOR", "absolute,Y", 4, 3)
+	newInst(0x41, "EOR", "indirect,X", 6, 2)
+	newInst(0x51, "EOR", "indirect,Y", 5, 2)
 	eo := []foo{
 		{0x49, func() { eor(immed) }},
 		{0x45, func() { eor(zeropage) }},
@@ -66,11 +66,11 @@ func Bitwise() {
 	}
 	apply(eo)
 
-	newInst(0x4A, "LSR", "immediate", 2)
-	newInst(0x46, "LSR", "zeropage", 5)
-	newInst(0x56, "LSR", "zeropage,X", 6)
-	newInst(0x4E, "LSR", "absolute", 6)
-	newInst(0x5E, "LSR", "absolute,X", 7)
+	newInst(0x4A, "LSR", "immediate", 2, 1)
+	newInst(0x46, "LSR", "zeropage", 5, 2)
+	newInst(0x56, "LSR", "zeropage,X", 6, 2)
+	newInst(0x4E, "LSR", "absolute", 6, 3)
+	newInst(0x5E, "LSR", "absolute,X", 7, 3)
 	ls := []foo{
 		{0x4A, func() {
 			output := lsr(ac())
@@ -91,11 +91,11 @@ func Bitwise() {
 	}
 	apply(ls)
 
-	newInst(0x0A, "ASL", "immediate", 2)
-	newInst(0x06, "ASL", "zeropage", 5)
-	newInst(0x16, "ASL", "zeropage,X", 6)
-	newInst(0x0E, "ASL", "absolute", 6)
-	newInst(0x1E, "ASL", "absolute,X", 7)
+	newInst(0x0A, "ASL", "immediate", 2, 1)
+	newInst(0x06, "ASL", "zeropage", 5, 2)
+	newInst(0x16, "ASL", "zeropage,X", 6, 2)
+	newInst(0x0E, "ASL", "absolute", 6, 3)
+	newInst(0x1E, "ASL", "absolute,X", 7, 3)
 	as := []foo{
 		{0x0A, func() { SetAC(asl(ac())) }},
 		{0x06, func() { RAM[zeropageAddr()] = asl(zeropage()) }},
@@ -105,11 +105,11 @@ func Bitwise() {
 	}
 	apply(as)
 
-	newInst(0x6A, "ROR", "immediate", 2)
-	newInst(0x66, "ROR", "zeropage", 5)
-	newInst(0x76, "ROR", "zeropage,X", 6)
-	newInst(0x6E, "ROR", "absolute", 6)
-	newInst(0x7E, "ROR", "absolute,X", 7)
+	newInst(0x6A, "ROR", "immediate", 2, 1)
+	newInst(0x66, "ROR", "zeropage", 5, 2)
+	newInst(0x76, "ROR", "zeropage,X", 6, 2)
+	newInst(0x6E, "ROR", "absolute", 6, 3)
+	newInst(0x7E, "ROR", "absolute,X", 7, 3)
 	ro := []foo{
 		{0x6A, func() { output := ror(ac()); SetAC(output) }},
 		{0x66, func() { RAM[zeropageAddr()] = ror(zeropage()) }},
@@ -119,11 +119,11 @@ func Bitwise() {
 	}
 	apply(ro)
 
-	newInst(0x2A, "ROL", "immediate", 2)
-	newInst(0x26, "ROL", "zeropage", 5)
-	newInst(0x36, "ROL", "zeropage,X", 6)
-	newInst(0x2E, "ROL", "absolute", 6)
-	newInst(0x3E, "ROL", "absolute,X", 7)
+	newInst(0x2A, "ROL", "immediate", 2, 1)
+	newInst(0x26, "ROL", "zeropage", 5, 2)
+	newInst(0x36, "ROL", "zeropage,X", 6, 2)
+	newInst(0x2E, "ROL", "absolute", 6, 3)
+	newInst(0x3E, "ROL", "absolute,X", 7, 3)
 	lo := []foo{
 		{0x2A, func() { SetAC(rol(ac())) }},
 		{0x26, func() { RAM[zeropageAddr()] = rol(zeropage()) }},
