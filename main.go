@@ -30,7 +30,7 @@ const SELECT = 0b00000100
 const BUTTON_B = 0b00000010
 const BUTTON_A = 0b00000001
 
-var IsPaused = false
+var IsPaused = true
 
 type Game struct {
 	Labels                    util.LabelSet
@@ -146,7 +146,7 @@ func (g *Game) DebugInfo(screen *ebiten.Image) {
 		y := 150
 		for i := 0; i < 15; i++ {
 			currentInstruction := cpu.Instructions[cpu.RAM[pc]]
-			s := FormatInstructionData(currentInstruction, pc)
+			s := FormatInstructionData(currentInstruction, pc, g.Labels)
 			if label, ok := g.Labels.GetLabelAt(pc); ok {
 				ebitenutil.DebugPrintAt(screen, label.Name, 520, y)
 				y += 13
@@ -168,7 +168,22 @@ func (g *Game) DebugInfo(screen *ebiten.Image) {
 	}
 }
 
-func FormatInstructionData(instruct cpu.Instruction, pc uint16) string {
+func GetInstructionData(instruct cpu.Instruction, pc uint16) uint16 {
+	if instruct.ByteCount == 2 {
+		return uint16(cpu.RAM[pc+1])
+	}
+	if instruct.ByteCount == 3 {
+		return cpu.GetWordAt(pc + 1)
+	}
+	return 0
+}
+
+func FormatInstructionData(instruct cpu.Instruction, pc uint16, set util.LabelSet) string {
+	data := GetInstructionData(instruct, pc)
+	label, ok := set.GetLabelForRam(data)
+	if ok {
+		return label.Name
+	}
 	switch instruct.AddressingMode {
 	case "immediate":
 		return fmt.Sprintf("#$%02X", cpu.RAM[pc+1])
@@ -210,12 +225,12 @@ func NESGame() {
 	}
 	defer pprof.StopCPUProfile()
 
-	//labels := util.ReadlabelFile("01.basics.mlb")
-	//fmt.Println(labels)
+	labels := util.ReadlabelFile("01.basics.mlb")
+	fmt.Println(labels)
 
 	game := &Game{
-		//Labels:                    labels,
-		//BreakPointMemoryAddresses: make([]*Breakpoint, 0),
+		Labels:                    labels,
+		BreakPointMemoryAddresses: make([]*Breakpoint, 0),
 	}
 	ebiten.SetWindowSize(1024, 768)
 	ebiten.SetWindowTitle("NES Emulator")
@@ -223,10 +238,10 @@ func NESGame() {
 	cpu.Reset()
 	cpu.LoadMaps()
 	//cpu.Load("nes-te/st-roms/tutor/tutor.nes")
-	//cpu.Load("nes-test-roms/sprite_hit_tests_2005.10.05/01.basics.nes")
+	cpu.Load("nes-test-roms/sprite_hit_tests_2005.10.05/01.basics.nes")
 
 	//cpu.Load("nes_test/smb.nes")
-	cpu.Load("nes_test/donkeykong.nes")
+	//cpu.Load("nes_test/donkeykong.nes")
 	//cpu.Load("../nes-test-roms/cpu_dummy_reads/vbl_nmi_timing/7.nmi_timing.nes")
 	cpu.Start()
 	ppu.DataStruct = ppu.NewPPU()

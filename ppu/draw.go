@@ -36,22 +36,7 @@ func (p *PPU) DrawSprites2(background *ebiten.Image) {
 		op.GeoM.Scale(2, 2)
 
 		data := p.pattern0[tileIndex*64 : tileIndex*64+64]
-
-		// Sprite 0 hit. See https://www.nesdev.org/wiki/PPU_OAM#Sprite_zero_hits
-		// TODO: need some extra cases for when it does and doesnt happen
-		if i == 0 && !p.hasSprite0ThisFrame {
-			for j := range data {
-				x, y := int(data[j]%8+byte(posX)), int(data[j]/8+byte(posY))
-				if data[j] == 0x00 && Background.At(x, y) == ColorList[PPURAM[0x3F00]&0b00111111] { // Transparent pixel
-					if x == 255 { // Extra conditions
-						continue
-					}
-					// Set sprite 0 hit
-					_PPUSTATUS = SetBit(_PPUSTATUS, 6)
-					p.hasSprite0ThisFrame = true
-				}
-			}
-		}
+		p.CheckSprite0Hit(i, data, posX, posY)
 
 		paletteID := tileAttr & 0x03
 		c1, c2, c3, c4 := GetSpritePalette(paletteID)
@@ -67,6 +52,27 @@ func (p *PPU) DrawSprites2(background *ebiten.Image) {
 		p.sprites[i/4].ReplacePixels(pixels)
 
 		background.DrawImage(p.sprites[i/4], op)
+	}
+}
+
+func (p *PPU) CheckSprite0Hit(i int, data []byte, posX, posY int) {
+	// Sprite 0 hit. See https://www.nesdev.org/wiki/PPU_OAM#Sprite_zero_hits
+	// TODO: need some extra cases for when it does and doesnt happen
+	if i == 0 && !p.hasSprite0ThisFrame {
+		for x := 0; x < 8; x++ {
+			for y := 0; y < 8; y++ {
+				pX, pY := posX+x, posY+y
+				//fmt.Printf("%d,%d\n", pX, pY)
+				if data[x+y*8] == 0x00 && Background.At(pX, pY) == ColorList[PPURAM[0x3F00]&0b00111111] { // Transparent pixel
+					if pX == 255 { // Extra conditions
+						continue
+					}
+					// Set sprite 0 hit
+					_PPUSTATUS = SetBit(_PPUSTATUS, 6)
+					p.hasSprite0ThisFrame = true
+				}
+			}
+		}
 	}
 }
 
