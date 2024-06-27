@@ -73,6 +73,20 @@ func (g *Game) Update(screen *ebiten.Image) error {
 		IsPaused = false
 	}
 
+	if IsPaused && inpututil.IsKeyJustPressed(ebiten.KeySlash) {
+		pc := cpu.PC
+		instruct := cpu.GetInstructionAt(pc)
+		for instruct.Name != "RTS" {
+			pc += uint16(instruct.ByteCount)
+			instruct = cpu.GetInstructionAt(pc)
+		}
+		g.BreakPointMemoryAddresses = append(g.BreakPointMemoryAddresses, &Breakpoint{
+			Address:      pc,
+			ClearWhenHit: true,
+		})
+		IsPaused = false
+	}
+
 	if IsPaused {
 		return nil
 	}
@@ -143,12 +157,14 @@ func (g *Game) DebugInfo(screen *ebiten.Image) {
 		ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Y: %02X", cpu.Y), 520, 130)
 
 		pc := cpu.PC
-		y := 150
+		y := 165
+
 		for i := 0; i < 15; i++ {
 			currentInstruction := cpu.Instructions[cpu.RAM[pc]]
 			s := FormatInstructionData(currentInstruction, pc, g.Labels)
 			if label, ok := g.Labels.GetLabelAt(pc); ok {
 				ebitenutil.DebugPrintAt(screen, label.Name, 520, y)
+
 				y += 13
 			}
 			if currentInstruction.Name == "JSR" || currentInstruction.Name == "JMP" {
@@ -237,12 +253,12 @@ func NESGame() {
 	ebiten.SetMaxTPS(60)
 	cpu.Reset()
 	cpu.LoadMaps()
-	//cpu.Load("nes-te/st-roms/tutor/tutor.nes")
-	cpu.Load("nes-test-roms/sprite_hit_tests_2005.10.05/01.basics.nes")
+	//cpu.Load("nes-test-roms/tutor/tutor.nes")
+	//cpu.Load("nes-test-roms/sprite_hit_tests_2005.10.05/01.basics.nes")
 
 	//cpu.Load("nes_test/smb.nes")
 	//cpu.Load("nes_test/donkeykong.nes")
-	//cpu.Load("../nes-test-roms/cpu_dummy_reads/vbl_nmi_timing/7.nmi_timing.nes")
+	cpu.Load("nes-test-roms/instr_test-v5/official_only.nes")
 	cpu.Start()
 	ppu.DataStruct = ppu.NewPPU()
 	ppu.DataStruct.PreloadPalleteTable(ppu.PATTERN_TABLE_0)

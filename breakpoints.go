@@ -6,3 +6,13 @@ type Breakpoint struct {
 
 	MarkedForRemoval bool
 }
+
+type Disassembly struct {
+	Instructions []DisInstruction
+}
+
+type DisInstruction struct {
+	Command string
+	Args    string
+	Address uint16
+}

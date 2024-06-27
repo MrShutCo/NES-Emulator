@@ -27,10 +27,13 @@ func (n *NES) Simulate() {
 		fmt.Println(output)
 	}
 	cycleDiff := cpu.Cycles - oldCycles
-	doneDrawing1 := n.PPU.StepPPU(byte(cycleDiff * 3))
-	if doneDrawing1 {
-		n.hasInterrupted = false
+	for i := 0; i < int(cycleDiff)*3; i++ {
+		doneDrawing := n.PPU.StepPPU()
+		if doneDrawing {
+			n.hasInterrupted = false
+		}
 	}
+
 }
 
 func (n *NES) interrupt() {

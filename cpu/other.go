@@ -2,6 +2,7 @@ package cpu
 
 import "fmt"
 
+// TODO: need to account for cycle cost for interupting
 func NMI_Interrupt() {
 	push(highByte(PC))
 	push(lowByte(PC))
@@ -27,9 +28,9 @@ func JMP() {
 	FuncMap[0x6C] = func() { // JMP indirect
 		lowAddr := getNextWord()
 		low := RAM[lowAddr]
-		hihiByte := int16(highByte(lowAddr)) << 8
+		hihiByte := uint16(highByte(lowAddr)) << 8
 		hiLowByte := lowByte(lowAddr) + 1
-		hiAddr := hihiByte | int16(hiLowByte) // keep page, mod 256 low bytes
+		hiAddr := hihiByte | uint16(hiLowByte) // keep page, mod 256 low bytes
 		hi := RAM[hiAddr]
 		if OutputCommands {
 			output = fmt.Sprintf("($%04X) = %04X", lowAddr, bytesToInt16(hi, low))

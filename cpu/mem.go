@@ -117,6 +117,8 @@ func SetRAM(addr uint16, data byte) {
 	switch addr {
 	case 0x2000, 0x2006, 0x2007:
 		ppu.DataStruct.WriteBus(addr, data)
+	case 0x4015:
+		fmt.Println("Channel enable")
 	case 0x4014:
 		page := uint16(data) << 8
 		var arr [0x100]byte

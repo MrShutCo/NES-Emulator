@@ -190,8 +190,8 @@ func (p *PPU) ShouldTriggerNMI() bool {
 	return p.nmi_occurred && p.nmi_output
 }
 
-func (p *PPU) StepPPU(cycles byte) bool {
-	p.cycles += int(cycles)
+func (p *PPU) StepPPU() bool {
+	p.cycles++
 	if p.cycles > 340 {
 		p.cycles -= 341
 		p.scanlines++
@@ -202,7 +202,7 @@ func (p *PPU) StepPPU(cycles byte) bool {
 		_PPUSTATUS = ClearBit(_PPUSTATUS, 6) // Clear sprite 0
 	}
 
-	if p.scanlines >= 8 && p.scanlines < 240 && p.scanlines%8 == 0 {
+	if p.scanlines >= 8 && p.scanlines < 240 && p.scanlines%8 == 0 && p.cycles == 340 {
 		p.DrawBackgroundRow(p.scanlines/8 - 1)
 	}
 
@@ -219,7 +219,7 @@ func (p *PPU) StepPPU(cycles byte) bool {
 
 	p.MirrorMemory()
 
-	if p.scanlines >= 262 {
+	if p.scanlines == 261 && p.cycles == 1 {
 		p.scanlines = 0
 		p.nmi_occurred = false
 		// Even/odd frame counting
@@ -349,6 +349,9 @@ func (b *PPU) WriteBus(cpuAddr uint16, data byte) {
 	switch cpuAddr {
 	case 0x2000:
 		b.ppuctrl(data)
+	case 0x2004:
+		OAM[_OAMADDR] = data
+		_OAMADDR++
 	case 0x2006:
 		_PPUADDR = _PPUADDR << 8           // Shift lo -> high
 		_PPUADDR = _PPUADDR & 0xFF00       // Set lo = 0
@@ -376,10 +379,9 @@ func (b *PPU) ReadBus(cpuAddr uint16) byte {
 func (p *PPU) ppustatus() {
 	_PPUADDR = 0x0
 
+	//p.nmi_occurred = _PPUSTATUS&0x80 == 0x80
 	if p.scanlines == 0 {
 		_PPUSTATUS = ClearBit(_PPUSTATUS, 7)
 	}
-	if p.nmi_occurred {
-		p.nmi_occurred = false
-	}
+
 }

@@ -69,6 +69,7 @@ func (p *PPU) CheckSprite0Hit(i int, data []byte, posX, posY int) {
 					}
 					// Set sprite 0 hit
 					_PPUSTATUS = SetBit(_PPUSTATUS, 6)
+					fmt.Printf("Sprite 0 hit at (%d,%d) \n", pX, pY)
 					p.hasSprite0ThisFrame = true
 				}
 			}

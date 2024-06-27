@@ -29,22 +29,30 @@ NesMemory:4015:ApuStatus_4015:Read:\nIF-D NT21\nDMC interrupt (I), frame interru
 NesMemory:4016:Ctrl1_4016:Read (NES - input):\n---4 3210\nRead data from controller port #1.\n\nWrite:\n---- ---A\nOutput data (strobe) to both controllers.
 NesMemory:4017:Ctrl2_FrameCtr_4017:Read (NES - input):\n---4 3210\nRead data from controller port #2.\n\nWrite (Frame counter): MI-- ----\nMode (M, 0 = 4-step, 1 = 5-step), IRQ inhibit flag (I)
 NesPrgRom:2004:error_if_eq
+NesPrgRom:2007:tests_passed
 NesPrgRom:200B:report_final_result_
+NesPrgRom:202A:no_name
 NesPrgRom:209E:begin_ppu_test
 NesPrgRom:20B0:clear_palette
 NesPrgRom:20C3:load_tiles
 NesPrgRom:20DD:clear_sprite_table
+NesPrgRom:20E8:dma_sprite_table
 NesPrgRom:20F5:set_sprite_xy
 NesPrgRom:218C:begin_sprite_hit_tests
 NesPrgRom:21A0:test_for_hit
 NesPrgRom:21C3:sprite_should_hit
+NesPrgRom:21CC:sprite_should_miss
+NesPrgRom:21D5:test_name
 NesPrgRom:2280:delay_msec
 NesPrgRom:2284:delay_msec_
+NesPrgRom:229B:delay_ya0
 NesPrgRom:257A:wait_vbl
 NesPrgRom:2583:set_vpage
 NesPrgRom:258F:disable_ppu
 NesPrgRom:25A3:clear_sprites
 NesPrgRom:25B0:fill_nametable
 NesPrgRom:25D3:clear_vram
+NesPrgRom:2600:debug_char
+NesPrgRom:2623:init_runtime
 NesInternalRam:0201:sprite_tile
 NesInternalRam:0202:sprite_attr
